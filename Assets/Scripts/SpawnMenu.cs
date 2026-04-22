@@ -17,7 +17,6 @@ public class SpawnMenu : MonoBehaviour
     public float rotationStep = 15f;
 
     [Header("Debug")]
-    public bool keyboardDebug = true;
     public bool showMenuOnScreen = true;
 
     private InputDevice leftDevice;
@@ -70,7 +69,7 @@ public class SpawnMenu : MonoBehaviour
         if (spawnPrefabs == null || spawnPrefabs.Length == 0)
             return;
 
-        // ===== PREVIEW FOLLOW RAYCAST =====
+        // Preview follows raycast
         if ((placementMode || orientationMode) && previewObject != null)
         {
             Ray ray = new Ray(rayOrigin.position, rayOrigin.forward);
@@ -84,7 +83,7 @@ public class SpawnMenu : MonoBehaviour
             }
         }
 
-        // ===== OPEN MENU =====
+        // Open menu
         if (!menuOpen && !placementMode && !orientationMode)
         {
             if (rightTriggerDown)
@@ -95,7 +94,7 @@ public class SpawnMenu : MonoBehaviour
             return;
         }
 
-        // ===== MENU =====
+        // Menu mode
         if (menuOpen)
         {
             if (leftGripDown)
@@ -129,7 +128,7 @@ public class SpawnMenu : MonoBehaviour
                 menuOpen = false;
         }
 
-        // ===== PLACEMENT =====
+        // Placement mode
         else if (placementMode)
         {
             if (leftGripDown)
@@ -152,7 +151,7 @@ public class SpawnMenu : MonoBehaviour
             }
         }
 
-        // ===== ORIENTATION =====
+        // Orientation mode
         else if (orientationMode)
         {
             if (leftGripDown)
@@ -208,14 +207,6 @@ public class SpawnMenu : MonoBehaviour
             rightDevice.TryGetFeatureValue(CommonUsages.gripButton, out rightGrip);
         }
 
-        if (keyboardDebug)
-        {
-            leftTrigger |= Input.GetKey(KeyCode.Z);
-            rightTrigger |= Input.GetKey(KeyCode.C);
-            leftGrip |= Input.GetKey(KeyCode.X);
-            rightGrip |= Input.GetKey(KeyCode.V);
-        }
-
         leftTriggerDown = leftTrigger && !prevLeftTrigger;
         rightTriggerDown = rightTrigger && !prevRightTrigger;
         leftGripDown = leftGrip && !prevLeftGrip;
@@ -250,22 +241,22 @@ public class SpawnMenu : MonoBehaviour
             GUI.Box(new Rect(x, y, w, h),
                 "Spawn Menu\n\n" +
                 "Selected: " + spawnPrefabs[selectedIndex].name + "\n\n" +
-                "X = Prev | V = Next\n" +
-                "C = Select\nZ = Close");
+                "Left Grip = Previous | Right Grip = Next\n" +
+                "Right Trigger = Select\nLeft Trigger = Close");
         }
         else if (placementMode)
         {
             GUI.Box(new Rect(x, y, w, h),
                 "Placement Mode\n\n" +
-                "X/V = Move\n" +
-                "C = Orientation\nZ = Cancel");
+                "Left/Right Grip = Move\n" +
+                "Right Trigger = Orientation\nLeft Trigger = Cancel");
         }
         else if (orientationMode)
         {
             GUI.Box(new Rect(x, y, w, h),
                 "Orientation Mode\n\n" +
-                "X/V = Rotate\n" +
-                "C = Spawn\nZ = Back");
+                "Left/Right Grip = Rotate\n" +
+                "Right Trigger = Spawn\nLeft Trigger = Back");
         }
     }
 }
