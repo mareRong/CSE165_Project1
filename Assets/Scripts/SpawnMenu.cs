@@ -7,6 +7,15 @@ public class SpawnMenu : MonoBehaviour
     public bool spawnModeEnabled = true;
     public GameObject[] spawnPrefabs;
 
+    [Header("Spawning")]
+    public Transform rayOrigin;
+    public float maxRayDistance = 20f;
+    public LayerMask placementMask = ~0;
+
+    [Header("Adjustment")]
+    public float placementStep = 0.2f;
+    public float rotationStep = 15f;
+
     [Header("Debug")]
     public bool keyboardDebug = true;
     public bool showMenuOnScreen = true;
@@ -20,27 +29,24 @@ public class SpawnMenu : MonoBehaviour
     private bool prevRightGrip;
 
     private int selectedIndex = 0;
+
     private bool menuOpen = false;
+    private bool placementMode = false;
+    private bool orientationMode = false;
 
-    public GameObject SelectedPrefab
-    {
-        get
-        {
-            if (spawnPrefabs == null || spawnPrefabs.Length == 0)
-                return null;
+    private GameObject previewObject;
 
-            return spawnPrefabs[selectedIndex];
-        }
-    }
+    private float placementOffset = 0f;
+    private float currentYRotation = 0f;
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         RefreshDevices();
+
+        if (rayOrigin == null)
+            rayOrigin = transform;
     }
 
-    
-    // Update is called once per frame
     void Update()
     {
         if (!leftDevice.isValid || !rightDevice.isValid)
@@ -49,74 +55,131 @@ public class SpawnMenu : MonoBehaviour
         if (!spawnModeEnabled)
         {
             menuOpen = false;
+            placementMode = false;
+            orientationMode = false;
+
+            if (previewObject != null)
+                Destroy(previewObject);
+
             return;
         }
 
         ReadButtons(out bool leftTriggerDown, out bool rightTriggerDown,
                     out bool leftGripDown, out bool rightGripDown);
 
-        if (!menuOpen)
+        if (spawnPrefabs == null || spawnPrefabs.Length == 0)
+            return;
+
+        // ===== PREVIEW FOLLOW RAYCAST =====
+        if ((placementMode || orientationMode) && previewObject != null)
+        {
+            Ray ray = new Ray(rayOrigin.position, rayOrigin.forward);
+            RaycastHit hit;
+
+            if (Physics.Raycast(ray, out hit, maxRayDistance, placementMask))
+            {
+                Vector3 pos = hit.point + rayOrigin.forward * placementOffset;
+                previewObject.transform.position = pos;
+                previewObject.transform.rotation = Quaternion.Euler(0, currentYRotation, 0);
+            }
+        }
+
+        // ===== OPEN MENU =====
+        if (!menuOpen && !placementMode && !orientationMode)
         {
             if (rightTriggerDown)
             {
                 menuOpen = true;
                 Debug.Log("Menu opened");
             }
-
             return;
         }
-            
 
-        if (spawnPrefabs == null || spawnPrefabs.Length == 0)
-            return;
-
-        // Left grip = previous item
-        if (leftGripDown)
+        // ===== MENU =====
+        if (menuOpen)
         {
-            selectedIndex = (selectedIndex - 1 + spawnPrefabs.Length) % spawnPrefabs.Length;
-            Debug.Log("Selected: " + spawnPrefabs[selectedIndex].name);
+            if (leftGripDown)
+                selectedIndex = (selectedIndex - 1 + spawnPrefabs.Length) % spawnPrefabs.Length;
+
+            if (rightGripDown)
+                selectedIndex = (selectedIndex + 1) % spawnPrefabs.Length;
+
+            if (rightTriggerDown)
+            {
+                menuOpen = false;
+                placementMode = true;
+
+                placementOffset = 0f;
+                currentYRotation = 0f;
+
+                if (previewObject != null)
+                    Destroy(previewObject);
+
+                previewObject = Instantiate(spawnPrefabs[selectedIndex]);
+
+                Rigidbody rb = previewObject.GetComponent<Rigidbody>();
+                if (rb != null)
+                {
+                    rb.useGravity = false;
+                    rb.isKinematic = true;
+                }
+            }
+
+            if (leftTriggerDown)
+                menuOpen = false;
         }
 
-        // Right grip = next item
-        if (rightGripDown)
+        // ===== PLACEMENT =====
+        else if (placementMode)
         {
-            selectedIndex = (selectedIndex + 1) % spawnPrefabs.Length;
-            Debug.Log("Selected: " + spawnPrefabs[selectedIndex].name);
+            if (leftGripDown)
+                placementOffset -= placementStep;
+
+            if (rightGripDown)
+                placementOffset += placementStep;
+
+            if (rightTriggerDown)
+            {
+                placementMode = false;
+                orientationMode = true;
+            }
+
+            if (leftTriggerDown)
+            {
+                Destroy(previewObject);
+                placementMode = false;
+                menuOpen = true;
+            }
         }
 
-        // Right trigger = confirm selection
-        if (rightTriggerDown)
+        // ===== ORIENTATION =====
+        else if (orientationMode)
         {
-            Debug.Log("Confirmed spawn object: " + spawnPrefabs[selectedIndex].name);
-            // another script can read SelectedPrefab and start placement
-            menuOpen = false;
+            if (leftGripDown)
+                currentYRotation -= rotationStep;
+
+            if (rightGripDown)
+                currentYRotation += rotationStep;
+
+            if (rightTriggerDown)
+            {
+                Rigidbody rb = previewObject.GetComponent<Rigidbody>();
+                if (rb != null)
+                {
+                    rb.useGravity = true;
+                    rb.isKinematic = false;
+                }
+
+                previewObject = null;
+                orientationMode = false;
+            }
+
+            if (leftTriggerDown)
+            {
+                orientationMode = false;
+                placementMode = true;
+            }
         }
-
-        // Left trigger = cancel / close menu
-        if (leftTriggerDown)
-        {
-            menuOpen = false;
-            Debug.Log("Spawn menu closed");
-        }
-    }
-
-      public void OpenMenu()
-    {
-        if (spawnPrefabs == null || spawnPrefabs.Length == 0)
-            return;
-
-        menuOpen = true;
-        Debug.Log("Spawn menu opened. Selected: " + spawnPrefabs[selectedIndex].name);
-    }
-
-    public void CloseMenu()
-    {
-        menuOpen = false;
-    }
-
-    public bool IsMenuOpen()
-    {
-        return menuOpen;
     }
 
     private void RefreshDevices()
@@ -145,7 +208,6 @@ public class SpawnMenu : MonoBehaviour
             rightDevice.TryGetFeatureValue(CommonUsages.gripButton, out rightGrip);
         }
 
-        // keyboard fallback for testing
         if (keyboardDebug)
         {
             leftTrigger |= Input.GetKey(KeyCode.Z);
@@ -168,38 +230,42 @@ public class SpawnMenu : MonoBehaviour
     void OnGUI()
     {
         if (!showMenuOnScreen || spawnPrefabs == null || spawnPrefabs.Length == 0)
-        return;
+            return;
 
         float scale = 3f;
-
-        // --- Center pivot ---
         Vector3 pivot = new Vector3(Screen.width / 2f, Screen.height / 2f, 0);
 
         GUI.matrix =
             Matrix4x4.TRS(pivot, Quaternion.identity, Vector3.one) *
-            Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(scale, scale, 1f)) *
+            Matrix4x4.Scale(new Vector3(scale, scale, 1)) *
             Matrix4x4.TRS(-pivot, Quaternion.identity, Vector3.one);
 
-        // --- Box size ---
-        float boxWidth = 400;
-        float boxHeight = 180;
+        float w = 400;
+        float h = 180;
+        float x = (Screen.width - w) / 2f;
+        float y = (Screen.height - h) / 2f;
 
-    
-        float x = (Screen.width - boxWidth) / 2f;
-        float y = (Screen.height - boxHeight) / 2f;
-
-    //Menu display
         if (menuOpen)
         {
-            GUI.Box(
-                new Rect(x, y, boxWidth, boxHeight),
+            GUI.Box(new Rect(x, y, w, h),
                 "Spawn Menu\n\n" +
                 "Selected: " + spawnPrefabs[selectedIndex].name + "\n\n" +
-                "X / Left Grip: Previous\n" +
-                "V / Right Grip: Next\n" +
-                "C / Right Trigger: Confirm\n" +
-                "Z / Left Trigger: Close"
-            );
+                "X = Prev | V = Next\n" +
+                "C = Select\nZ = Close");
+        }
+        else if (placementMode)
+        {
+            GUI.Box(new Rect(x, y, w, h),
+                "Placement Mode\n\n" +
+                "X/V = Move\n" +
+                "C = Orientation\nZ = Cancel");
+        }
+        else if (orientationMode)
+        {
+            GUI.Box(new Rect(x, y, w, h),
+                "Orientation Mode\n\n" +
+                "X/V = Rotate\n" +
+                "C = Spawn\nZ = Back");
         }
     }
 }
