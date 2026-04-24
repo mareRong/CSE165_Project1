@@ -130,7 +130,6 @@ public class SpawnMenu : MonoBehaviour
                     Destroy(previewObject);
 
                 previewObject = Instantiate(spawnPrefabs[selectedIndex]);
-                EnsureSelectableComponent(previewObject);
 
                 Rigidbody rb = previewObject.GetComponent<Rigidbody>();
                 if (rb != null)
