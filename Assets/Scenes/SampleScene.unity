@@ -901,6 +901,7 @@ MonoBehaviour:
   menuScreenWidth: 340
   multiSpawnSpacing: 1.2
   spawnHeightOffset: 0.2
+  maxSpawnRange: 5
 --- !u!1001 &693114214
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1914,7 +1915,7 @@ Transform:
   m_GameObject: {fileID: 1306878129}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -4.3153973, y: 0.5940829, z: -2.4792123}
+  m_LocalPosition: {x: -4.3153973, y: 1.31, z: -2.65}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3082,26 +3083,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dc16442fe911a425b8839f3a01ba7f4c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DirectManipulationVR
-  rayOrigin: {fileID: 0}
-  selectableMask:
-    m_Bits: 4294967295
-  maxRayDistance: 20
-  moveOffsetStep: 0.2
-  rotationStep: 15
-  scaleStep: 0.1
-  minScale: 0.2
-  maxScale: 3
-  showDebugRay: 1
-  prevTrigger: 0
-  prevGrip: 0
-  triggerPressed: 0
-  gripPressed: 0
-  selectedObject: {fileID: 0}
-  manipulationMode: 0
-  moveOffset: 0
-  currentYRotation: 0
-  currentScale: {x: 1, y: 1, z: 1}
-  subMode: 0
 --- !u!114 &2100001003
 MonoBehaviour:
   m_ObjectHideFlags: 0
