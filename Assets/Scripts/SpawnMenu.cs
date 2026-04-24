@@ -45,6 +45,9 @@ public class SpawnMenu : MonoBehaviour
 
     private float currentYRotation = 0f;
 
+    [Header("Placement Offset")]
+    public float spawnHeightOffset = 0.2f;
+
     void Start()
     {
         RefreshDevices();
@@ -148,8 +151,6 @@ public class SpawnMenu : MonoBehaviour
 
     private void HandleOrientationMode(bool leftTriggerDown, bool rightGripDown)
     {
-        UpdatePreviewPosition();
-
         if (rightTriggerHeld)
         {
             currentYRotation = GetControllerYaw();
@@ -217,7 +218,7 @@ public class SpawnMenu : MonoBehaviour
 
         if (Physics.Raycast(ray, out RaycastHit hit, maxRayDistance, placementMask))
         {
-            previewObject.transform.position = hit.point;
+            previewObject.transform.position = hit.point + Vector3.up * spawnHeightOffset;
             previewObject.transform.rotation = Quaternion.Euler(0f, currentYRotation, 0f);
         }
     }
