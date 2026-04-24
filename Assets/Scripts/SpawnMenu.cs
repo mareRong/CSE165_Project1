@@ -25,7 +25,7 @@ public class SpawnMenu : MonoBehaviour
 
     // ===================== MULTI SPAWN SETTINGS =====================
     [Header("Multi Spawn")]
-    public float multiSpawnSpacing = 1.2f;
+    public float multiSpawnSpacing = 0.8f;
 
     // ===================== INPUT DEVICES =====================
     private InputDevice leftDevice;

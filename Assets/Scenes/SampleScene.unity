@@ -899,7 +899,7 @@ MonoBehaviour:
   showMenuOnScreen: 1
   menuScale: 2.4
   menuScreenWidth: 340
-  multiSpawnSpacing: 1.2
+  multiSpawnSpacing: 0.8
   spawnHeightOffset: 0.2
   maxSpawnRange: 5
 --- !u!1001 &693114214
