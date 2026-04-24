@@ -50,7 +50,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -927199367670048503, guid: 6fda59cad8aecc949af7754c494bbc09, type: 3}
       propertyPath: m_Name
-      value: Medical_instrument_9
+      value: Medical Instrument 9
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -87,7 +87,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.022229608, y: 0.01167757, z: 0.1919392}
+  m_Size: {x: 0.5, y: 0.5, z: 0.1}
   m_Center: {x: 0.0000015650876, y: 0.00000184495, z: 0.00000090524554}
 --- !u!54 &-2673701319899664549
 Rigidbody:
