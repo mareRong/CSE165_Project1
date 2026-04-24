@@ -23,8 +23,11 @@ public class DirectManipulationVR : MonoBehaviour
 
     [Header("Optional")]
     public bool showDebugRay = true;
+    public Color pointerColor = new Color(0.17f, 0.85f, 1f, 1f);
+    public float pointerWidth = 0.01f;
 
     private InputDevice rightDevice;
+    private LineRenderer pointerLine;
 
     private bool prevTrigger;
     private bool prevGrip;
@@ -41,15 +44,17 @@ public class DirectManipulationVR : MonoBehaviour
     void Start()
     {
         RefreshDevice();
-
-        if (rayOrigin == null)
-            rayOrigin = transform;
+        ResolveReferences();
+        CreatePointer();
     }
 
     void Update()
     {
         if (!rightDevice.isValid)
             RefreshDevice();
+
+        if (rayOrigin == null)
+            ResolveReferences();
 
         ReadButtons();
 
@@ -60,6 +65,8 @@ public class DirectManipulationVR : MonoBehaviour
         {
             HandleManipulation();
         }
+
+        UpdatePointer();
     }
 
     private void HandleSelection()
@@ -226,18 +233,101 @@ public class DirectManipulationVR : MonoBehaviour
     private void SetSelected(SelectableObject obj)
     {
         if (selectedObject != null)
-            selectedObject.SetHighlight(false);
+            selectedObject.SetHighlight(false, SelectableObject.HighlightChannel.SingleSelection);
 
         selectedObject = obj;
-        selectedObject.SetHighlight(true);
+        selectedObject.SetHighlight(true, SelectableObject.HighlightChannel.SingleSelection);
 
         currentYRotation = selectedObject.transform.eulerAngles.y;
         currentScale = selectedObject.transform.localScale;
     }
 
+    private void ResolveReferences()
+    {
+        if (rayOrigin != null)
+            return;
+
+        rayOrigin = ResolveControllerTransform("Right Controller");
+
+        if (rayOrigin == null)
+            rayOrigin = transform;
+    }
+
     private void RefreshDevice()
     {
         rightDevice = InputDevices.GetDeviceAtXRNode(XRNode.RightHand);
+    }
+
+    private Transform ResolveControllerTransform(string controllerName)
+    {
+        if (Camera.main != null)
+        {
+            Transform candidate = FindChildRecursive(Camera.main.transform.root, controllerName);
+            if (candidate != null)
+                return candidate;
+        }
+
+        return null;
+    }
+
+    private Transform FindChildRecursive(Transform parent, string childName)
+    {
+        if (parent == null)
+            return null;
+
+        if (parent.name == childName)
+            return parent;
+
+        for (int i = 0; i < parent.childCount; i++)
+        {
+            Transform result = FindChildRecursive(parent.GetChild(i), childName);
+            if (result != null)
+                return result;
+        }
+
+        return null;
+    }
+
+    private void CreatePointer()
+    {
+        GameObject pointerObject = new GameObject("SingleSelectionPointer");
+        pointerObject.transform.SetParent(transform, false);
+
+        pointerLine = pointerObject.AddComponent<LineRenderer>();
+        pointerLine.useWorldSpace = true;
+        pointerLine.positionCount = 2;
+        pointerLine.loop = false;
+        pointerLine.alignment = LineAlignment.View;
+        pointerLine.widthMultiplier = pointerWidth;
+        pointerLine.numCapVertices = 4;
+        pointerLine.numCornerVertices = 4;
+        pointerLine.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        pointerLine.receiveShadows = false;
+        pointerLine.startColor = pointerColor;
+        pointerLine.endColor = pointerColor;
+        pointerLine.enabled = false;
+    }
+
+    private void UpdatePointer()
+    {
+        if (pointerLine == null || rayOrigin == null)
+            return;
+
+        if (!showDebugRay)
+        {
+            pointerLine.enabled = false;
+            return;
+        }
+
+        Vector3 start = rayOrigin.position;
+        Vector3 end = start + rayOrigin.forward * maxRayDistance;
+
+        if (Physics.Raycast(start, rayOrigin.forward, out RaycastHit hit, maxRayDistance, selectableMask))
+            end = hit.point;
+
+        pointerLine.SetPosition(0, start);
+        pointerLine.SetPosition(1, end);
+        pointerLine.enabled = true;
     }
 
     private void ReadButtons()

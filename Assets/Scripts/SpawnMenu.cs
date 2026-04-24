@@ -41,15 +41,16 @@ public class SpawnMenu : MonoBehaviour
     void Start()
     {
         RefreshDevices();
-
-        if (rayOrigin == null)
-            rayOrigin = transform;
+        ResolveReferences();
     }
 
     void Update()
     {
         if (!leftDevice.isValid || !rightDevice.isValid)
             RefreshDevices();
+
+        if (rayOrigin == null)
+            ResolveReferences();
 
         if (!spawnModeEnabled)
         {
@@ -115,6 +116,7 @@ public class SpawnMenu : MonoBehaviour
                     Destroy(previewObject);
 
                 previewObject = Instantiate(spawnPrefabs[selectedIndex]);
+                EnsureSelectableComponent(previewObject);
 
                 Rigidbody rb = previewObject.GetComponent<Rigidbody>();
                 if (rb != null)
@@ -185,6 +187,49 @@ public class SpawnMenu : MonoBehaviour
     {
         leftDevice = InputDevices.GetDeviceAtXRNode(XRNode.LeftHand);
         rightDevice = InputDevices.GetDeviceAtXRNode(XRNode.RightHand);
+    }
+
+    private void ResolveReferences()
+    {
+        if (rayOrigin != null)
+            return;
+
+        rayOrigin = ResolveControllerTransform("Right Controller");
+
+        if (rayOrigin == null)
+            rayOrigin = transform;
+    }
+
+    private Transform ResolveControllerTransform(string controllerName)
+    {
+        if (Camera.main == null)
+            return null;
+
+        return FindChildRecursive(Camera.main.transform.root, controllerName);
+    }
+
+    private Transform FindChildRecursive(Transform parent, string childName)
+    {
+        if (parent == null)
+            return null;
+
+        if (parent.name == childName)
+            return parent;
+
+        for (int i = 0; i < parent.childCount; i++)
+        {
+            Transform result = FindChildRecursive(parent.GetChild(i), childName);
+            if (result != null)
+                return result;
+        }
+
+        return null;
+    }
+
+    private void EnsureSelectableComponent(GameObject target)
+    {
+        if (target.GetComponent<SelectableObject>() == null)
+            target.AddComponent<SelectableObject>();
     }
 
     private void ReadButtons(out bool leftTriggerDown, out bool rightTriggerDown,
