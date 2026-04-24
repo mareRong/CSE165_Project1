@@ -46,11 +46,10 @@ public class SpawnMenu : MonoBehaviour
     private float currentYRotation = 0f;
 
     [Header("Placement Offset")]
-    public float spawnHeightOffset = 0.5f;
+    public float spawnHeightOffset = 0.7f;
 
     [Header("Spawn Constraints")]
     public float maxSpawnRange = 5f;
-    public float maxSpawnAngle = 45f;
 
     void Start()
     {
@@ -213,28 +212,36 @@ public class SpawnMenu : MonoBehaviour
         placementMode = true;
     }
 
-    private void UpdatePreviewPosition()
+private void UpdatePreviewPosition()
+{
+    if (previewObject == null || rayOrigin == null)
+        return;
+
+    Ray ray = new Ray(rayOrigin.position, rayOrigin.forward);
+
+    Vector3 targetPoint;
+
+    if (Physics.Raycast(ray, out RaycastHit hit, maxRayDistance, placementMask))
     {
-        if (previewObject == null || rayOrigin == null)
-            return;
-
-        Ray ray = new Ray(rayOrigin.position, rayOrigin.forward);
-
-        if (Physics.Raycast(ray, out RaycastHit hit, maxRayDistance, placementMask))
-        {
-            Vector3 directionToHit = (hit.point - rayOrigin.position).normalized;
-
-            float distance = Vector3.Distance(rayOrigin.position, hit.point);
-            float angle = Vector3.Angle(rayOrigin.forward, directionToHit);
-
-            // Only allow placement if within range AND within view
-            if (distance <= maxSpawnRange && angle <= maxSpawnAngle)
-            {
-                previewObject.transform.position = hit.point + Vector3.up * spawnHeightOffset;
-                previewObject.transform.rotation = Quaternion.Euler(0f, currentYRotation, 0f);
-            }
-        }
+        targetPoint = hit.point;
     }
+    else
+    {
+        targetPoint = rayOrigin.position + rayOrigin.forward * maxSpawnRange;
+    }
+
+    Vector3 fromPlayer = targetPoint - rayOrigin.position;
+
+    if (fromPlayer.magnitude > maxSpawnRange)
+    {
+        fromPlayer = fromPlayer.normalized * maxSpawnRange;
+        targetPoint = rayOrigin.position + fromPlayer;
+    }
+
+    previewObject.SetActive(true);
+    previewObject.transform.position = targetPoint + Vector3.up * spawnHeightOffset;
+    previewObject.transform.rotation = Quaternion.Euler(0f, currentYRotation, 0f);
+}
 
     private void ConfirmSpawn()
     {
