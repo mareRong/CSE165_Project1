@@ -62,6 +62,9 @@ public class SpawnMenu : MonoBehaviour
         if (!leftDevice.isValid || !rightDevice.isValid)
             RefreshDevices();
 
+        if (rayOrigin == null)
+            ResolveReferences();
+
         if (!spawnModeEnabled)
         {
             menuOpen = false;
@@ -127,6 +130,7 @@ public class SpawnMenu : MonoBehaviour
                     Destroy(previewObject);
 
                 previewObject = Instantiate(spawnPrefabs[selectedIndex]);
+                EnsureSelectableComponent(previewObject);
 
                 Rigidbody rb = previewObject.GetComponent<Rigidbody>();
                 if (rb != null)
