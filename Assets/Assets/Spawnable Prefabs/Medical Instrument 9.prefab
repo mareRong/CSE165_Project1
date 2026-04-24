@@ -52,6 +52,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Medical Instrument 9
       objectReference: {fileID: 0}
+    - target: {fileID: -927199367670048503, guid: 6fda59cad8aecc949af7754c494bbc09, type: 3}
+      propertyPath: m_Layer
+      value: 3
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

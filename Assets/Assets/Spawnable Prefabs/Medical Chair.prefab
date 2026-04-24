@@ -50,7 +50,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -927199367670048503, guid: 54577ef589ab9974f9f1dedf5b093e35, type: 3}
       propertyPath: m_Name
-      value: Medical_chair_1_Prefab
+      value: Medical Chair
+      objectReference: {fileID: 0}
+    - target: {fileID: -927199367670048503, guid: 54577ef589ab9974f9f1dedf5b093e35, type: 3}
+      propertyPath: m_Layer
+      value: 3
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

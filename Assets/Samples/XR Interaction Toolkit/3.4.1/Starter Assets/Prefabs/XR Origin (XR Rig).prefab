@@ -197,6 +197,7 @@ GameObject:
   - component: {fileID: 4238984354899526239}
   - component: {fileID: 4602308928622519009}
   - component: {fileID: 1750551342138294735}
+  - component: {fileID: 4313048543678107158}
   m_Layer: 0
   m_Name: Right Controller
   m_TagString: Untagged
@@ -397,6 +398,32 @@ MonoBehaviour:
   multiSpawnSpacing: 1.2
   spawnHeightOffset: 0.2
   maxSpawnRange: 5
+--- !u!114 &4313048543678107158
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1670256624}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f2277bd3ab548403fb5c354804c13f00, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SelectionManipulator
+  rayOrigin: {fileID: 1670256625}
+  maxRayDistance: 20
+  selectableMask:
+    serializedVersion: 2
+    m_Bits: 8
+  lineRenderer: {fileID: 0}
+  hitPointVisual: {fileID: 0}
+  moveHeightOffset: 0.7
+  defaultMoveDistance: 3
+  scaleSpeed: 1.5
+  minScale: 0.2
+  maxScale: 3
+  hoverColor: {r: 0, g: 1, b: 1, a: 1}
+  selectedColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
 --- !u!1 &1680501586
 GameObject:
   m_ObjectHideFlags: 0
