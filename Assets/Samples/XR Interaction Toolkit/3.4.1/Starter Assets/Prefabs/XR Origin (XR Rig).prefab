@@ -383,6 +383,9 @@ MonoBehaviour:
   spawnPrefabs:
   - {fileID: 3636958033759261081, guid: 5298a9fa39bbd4ac2a0700f6e8a6cf1f, type: 3}
   - {fileID: 5612014854748817282, guid: 140c777bba7b046b3be06af1d9abe80c, type: 3}
+  - {fileID: 5995678353580508471, guid: 45bb24cd9e1c0474b883374efc633503, type: 3}
+  - {fileID: 9149357831951368021, guid: 754f62b191b46480fb52ac74fa330ec2, type: 3}
+  - {fileID: 7485976883828519068, guid: 4f12a11f161d247ca9aaea93b070ea4b, type: 3}
   rayOrigin: {fileID: 0}
   maxRayDistance: 20
   placementMask:
@@ -393,6 +396,7 @@ MonoBehaviour:
   menuScreenWidth: 420
   multiSpawnSpacing: 1.2
   spawnHeightOffset: 0.2
+  maxSpawnRange: 5
 --- !u!1 &1680501586
 GameObject:
   m_ObjectHideFlags: 0
