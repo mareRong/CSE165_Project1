@@ -196,6 +196,7 @@ GameObject:
   - component: {fileID: 6678509202150728127}
   - component: {fileID: 4238984354899526239}
   - component: {fileID: 4602308928622519009}
+  - component: {fileID: 1750551342138294735}
   m_Layer: 0
   m_Name: Right Controller
   m_TagString: Untagged
@@ -366,6 +367,30 @@ MonoBehaviour:
     m_Interactions: 
     m_SingletonActionBindings: []
     m_Flags: 0
+--- !u!114 &1750551342138294735
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1670256624}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b06804973600744d29e5b49131bc8c4c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SpawnMenu
+  spawnModeEnabled: 1
+  spawnPrefabs:
+  - {fileID: 3636958033759261081, guid: 5298a9fa39bbd4ac2a0700f6e8a6cf1f, type: 3}
+  - {fileID: 5612014854748817282, guid: 140c777bba7b046b3be06af1d9abe80c, type: 3}
+  rayOrigin: {fileID: 0}
+  maxRayDistance: 20
+  placementMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  placementStep: 0.2
+  rotationStep: 15
+  showMenuOnScreen: 1
 --- !u!1 &1680501586
 GameObject:
   m_ObjectHideFlags: 0
@@ -941,7 +966,6 @@ CharacterController:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
