@@ -382,10 +382,6 @@ void OnGUI()
     if (!showMenuOnScreen || spawnPrefabs == null || spawnPrefabs.Length == 0)
         return;
 
-    // Show nothing when no mode is active
-    if (!menuOpen && !placementMode && !orientationMode)
-        return;
-
     float scale = menuScale;
     Vector3 pivot = new Vector3(Screen.width / 2f, Screen.height / 2f, 0);
 
@@ -395,34 +391,34 @@ void OnGUI()
         Matrix4x4.TRS(-pivot, Quaternion.identity, Vector3.one);
 
     float w = menuScreenWidth;
-    float h = menuOpen ? Mathf.Max(160f, 100f + spawnPrefabs.Length * 18f) : 110f;
-
-    // top-right corner
-    float x = Screen.width - w - 20f;
-    float y = 20f;
+    float h = menuOpen ? Mathf.Max(220f, 150f + spawnPrefabs.Length * 24f) : 160f;
+    float x = (Screen.width - w) / 2f;
+    float y = (Screen.height - h) / 2f;
 
     if (menuOpen)
     {
         GUI.Box(new Rect(x, y, w, h),
             "Spawn Menu\n\n" +
             BuildMenuText() + "\n" +
-            "L/R Trigger = Change\n" +
-            "R Grip = Multi\n" +
-            "L Grip = Place");
+            "Left/Right Trigger = Change Prefab\n" +
+            "Right Grip = Add/Remove Multi-Select\n" +
+            "Left Grip = Start Placement");
     }
     else if (placementMode)
     {
         GUI.Box(new Rect(x, y, w, h),
-            "Placement\n\n" +
-            "R Trigger = Rotate\n" +
-            "L Trigger = Cancel");
+            "Placement Mode\n\n" +
+            "Preview follows raycast hit point\n" +
+            "Right Trigger = Orientation\n" +
+            "Left Trigger = Cancel");
     }
     else if (orientationMode)
     {
         GUI.Box(new Rect(x, y, w, h),
-            "Orientation\n\n" +
-            "Hold R Trigger = Rotate\n" +
-            "R Grip = Confirm");
+            "Orientation Mode\n\n" +
+            "Hold Right Trigger + Tilt Controller = Rotate\n" +
+            "Right Grip = Confirm Spawn\n" +
+            "Left Trigger = Back");
     }
 }
 
