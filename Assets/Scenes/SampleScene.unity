@@ -862,6 +862,9 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 1277056580}
     m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1717954561962503725, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 674854247}
     - targetCorrespondingSourceObject: {fileID: 1670256624, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
       insertIndex: -1
       addedObject: {fileID: 674854243}
@@ -869,6 +872,21 @@ PrefabInstance:
 --- !u!4 &674854241 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1717954561962503726, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
+  m_PrefabInstance: {fileID: 674854240}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &674854244 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1717954561962503725, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
+  m_PrefabInstance: {fileID: 674854240}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &674854245 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1767192434, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
+  m_PrefabInstance: {fileID: 674854240}
+  m_PrefabAsset: {fileID: 0}
+--- !u!143 &674854246 stripped
+CharacterController:
+  m_CorrespondingSourceObject: {fileID: 6232745470614056090, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
   m_PrefabInstance: {fileID: 674854240}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &674854242 stripped
@@ -902,6 +920,31 @@ MonoBehaviour:
   multiSpawnSpacing: 0.8
   spawnHeightOffset: 0.2
   maxSpawnRange: 5
+--- !u!114 &674854247
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 674854244}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ec65a6aeab40c41e5a9f2ae96dd65908, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TravelRigController
+  rigRoot: {fileID: 674854241}
+  headTransform: {fileID: 674854245}
+  characterController: {fileID: 674854246}
+  moveAction: {fileID: 6972639530819350904, guid: c348712bda248c246b8c49b3db54643f, type: 3}
+  turnAction: {fileID: -6493913391331992944, guid: c348712bda248c246b8c49b3db54643f, type: 3}
+  moveHand: 4
+  turnHand: 5
+  preferXRThumbsticks: 1
+  moveSpeed: 1.75
+  turnSpeedDegrees: 90
+  deadZone: 0.2
+  rotateAroundHead: 1
+  applyGravityWithCharacterController: 1
 --- !u!1001 &693114214
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1707,11 +1750,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 99822efef3c294a66b5a7ed3c862c673, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TravelIndicator
-  indicatorOrigin: {fileID: 1277056580}
-  movementReference: {fileID: 0}
+  indicatorOrigin: {fileID: 674854241}
+  movementReference: {fileID: 674854245}
   lineRenderer: {fileID: 1277056582}
-  moveAction: {fileID: 0}
-  turnAction: {fileID: 0}
+  moveAction: {fileID: 6972639530819350904, guid: c348712bda248c246b8c49b3db54643f, type: 3}
+  turnAction: {fileID: -6493913391331992944, guid: c348712bda248c246b8c49b3db54643f, type: 3}
   moveHand: 4
   turnHand: 5
   preferXRThumbsticks: 1
