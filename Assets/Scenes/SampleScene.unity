@@ -3112,7 +3112,6 @@ MonoBehaviour:
     m_Bits: 4294967295
   placementStep: 0.2
   rotationStep: 15
-  keyboardDebug: 1
   showMenuOnScreen: 1
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
