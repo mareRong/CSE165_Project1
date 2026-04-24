@@ -53,8 +53,11 @@ public class GroupSelectionManipulationVR : MonoBehaviour
     private Quaternion lastHandRotation;
 
     private LineRenderer selectorLine;
+    private LineRenderer candidateLine;
     private Transform selectorSphere;
     private Renderer selectorRenderer;
+    private Transform candidateSphere;
+    private Renderer candidateRenderer;
     private Transform pivotSphere;
     private Renderer pivotRenderer;
 
@@ -481,8 +484,27 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         selectorLine.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         selectorLine.receiveShadows = false;
 
+        GameObject candidateLineObject = new GameObject("GroupCandidateLine");
+        candidateLineObject.transform.SetParent(transform, false);
+
+        candidateLine = candidateLineObject.AddComponent<LineRenderer>();
+        candidateLine.useWorldSpace = true;
+        candidateLine.positionCount = 2;
+        candidateLine.loop = false;
+        candidateLine.alignment = LineAlignment.View;
+        candidateLine.widthMultiplier = indicatorLineWidth * 0.75f;
+        candidateLine.numCapVertices = 4;
+        candidateLine.numCornerVertices = 4;
+        candidateLine.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        candidateLine.receiveShadows = false;
+        candidateLine.enabled = false;
+
         selectorSphere = CreateIndicatorPrimitive("GroupSelectionBubble", selectorRadius * 2f);
         selectorRenderer = selectorSphere.GetComponent<Renderer>();
+
+        candidateSphere = CreateIndicatorPrimitive("GroupCandidateIndicator", 0.12f);
+        candidateRenderer = candidateSphere.GetComponent<Renderer>();
+        candidateSphere.gameObject.SetActive(false);
 
         pivotSphere = CreateIndicatorPrimitive("GroupPivotIndicator", 0.08f);
         pivotRenderer = pivotSphere.GetComponent<Renderer>();
@@ -533,6 +555,20 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         selectorSphere.position = center;
         selectorSphere.localScale = Vector3.one * selectorRadius * 2f;
         selectorRenderer.material.color = lineColor;
+
+        bool showCandidate = candidateObject != null && !selectedObjects.Contains(candidateObject);
+        candidateSphere.gameObject.SetActive(showCandidate);
+        candidateLine.enabled = showCandidate;
+        if (showCandidate)
+        {
+            Vector3 candidatePosition = candidateObject.transform.position;
+            candidateSphere.position = candidatePosition;
+            candidateRenderer.material.color = candidateColor;
+            candidateLine.startColor = candidateColor;
+            candidateLine.endColor = candidateColor;
+            candidateLine.SetPosition(0, center);
+            candidateLine.SetPosition(1, candidatePosition);
+        }
 
         bool showPivot = selectedObjects.Count > 0;
         pivotSphere.gameObject.SetActive(showPivot);
