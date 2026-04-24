@@ -306,8 +306,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 97838090}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -4.3153973, y: 0.5940829, z: -2.4792123}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -4.3153973, y: 1.256, z: -2.63}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -842,6 +842,18 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 1.67
       objectReference: {fileID: 0}
+    - target: {fileID: 5033801203051696737, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5826056641483426609, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
+      propertyPath: m_TrackedHandModeStarted.m_PersistentCalls.m_Calls.Array.size
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5826056641483426609, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
+      propertyPath: m_TrackedHandModeStarted.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects:
     - {fileID: 5167925059111895691, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
@@ -884,9 +896,11 @@ MonoBehaviour:
   placementMask:
     serializedVersion: 2
     m_Bits: 4294967295
-  placementStep: 0.2
-  rotationStep: 15
   showMenuOnScreen: 1
+  menuScale: 2.4
+  menuScreenWidth: 340
+  multiSpawnSpacing: 1.2
+  spawnHeightOffset: 0.2
 --- !u!1001 &693114214
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3070,7 +3084,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DirectManipulationVR
   rayOrigin: {fileID: 0}
   selectableMask:
-    serializedVersion: 2
     m_Bits: 4294967295
   maxRayDistance: 20
   moveOffsetStep: 0.2
@@ -3079,8 +3092,16 @@ MonoBehaviour:
   minScale: 0.2
   maxScale: 3
   showDebugRay: 1
-  pointerColor: {r: 0.17, g: 0.85, b: 1, a: 1}
-  pointerWidth: 0.01
+  prevTrigger: 0
+  prevGrip: 0
+  triggerPressed: 0
+  gripPressed: 0
+  selectedObject: {fileID: 0}
+  manipulationMode: 0
+  moveOffset: 0
+  currentYRotation: 0
+  currentScale: {x: 1, y: 1, z: 1}
+  subMode: 0
 --- !u!114 &2100001003
 MonoBehaviour:
   m_ObjectHideFlags: 0

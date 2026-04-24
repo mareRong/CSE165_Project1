@@ -46,7 +46,11 @@ public class SpawnMenu : MonoBehaviour
     private float currentYRotation = 0f;
 
     [Header("Placement Offset")]
-    public float spawnHeightOffset = 0.2f;
+    public float spawnHeightOffset = 0.5f;
+
+    [Header("Spawn Constraints")]
+    public float maxSpawnRange = 5f;
+    public float maxSpawnAngle = 45f;
 
     void Start()
     {
@@ -218,8 +222,17 @@ public class SpawnMenu : MonoBehaviour
 
         if (Physics.Raycast(ray, out RaycastHit hit, maxRayDistance, placementMask))
         {
-            previewObject.transform.position = hit.point + Vector3.up * spawnHeightOffset;
-            previewObject.transform.rotation = Quaternion.Euler(0f, currentYRotation, 0f);
+            Vector3 directionToHit = (hit.point - rayOrigin.position).normalized;
+
+            float distance = Vector3.Distance(rayOrigin.position, hit.point);
+            float angle = Vector3.Angle(rayOrigin.forward, directionToHit);
+
+            // Only allow placement if within range AND within view
+            if (distance <= maxSpawnRange && angle <= maxSpawnAngle)
+            {
+                previewObject.transform.position = hit.point + Vector3.up * spawnHeightOffset;
+                previewObject.transform.rotation = Quaternion.Euler(0f, currentYRotation, 0f);
+            }
         }
     }
 
