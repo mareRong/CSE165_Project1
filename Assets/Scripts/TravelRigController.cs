@@ -32,17 +32,17 @@ public class TravelRigController : MonoBehaviour
 
     private void Reset()
     {
-        ResolveReferences();
-    }
+        rigRoot = transform;
+        characterController = GetComponent<CharacterController>();
 
-    private void Awake()
-    {
-        ResolveReferences();
+        if (Camera.main != null)
+        {
+            headTransform = Camera.main.transform;
+        }
     }
 
     private void OnEnable()
     {
-        ResolveReferences();
         moveActionWasEnabled = EnableAction(moveAction);
         turnActionWasEnabled = EnableAction(turnAction);
     }
@@ -55,11 +55,6 @@ public class TravelRigController : MonoBehaviour
 
     private void Update()
     {
-        if (rigRoot == null || headTransform == null)
-        {
-            ResolveReferences();
-        }
-
         if (rigRoot == null)
         {
             return;
@@ -199,40 +194,6 @@ public class TravelRigController : MonoBehaviour
         }
 
         return forward.normalized;
-    }
-
-    private void ResolveReferences()
-    {
-        if (characterController == null)
-        {
-            characterController = GetComponent<CharacterController>();
-
-            if (characterController == null)
-            {
-                characterController = GetComponentInParent<CharacterController>();
-            }
-        }
-
-        if (rigRoot == null)
-        {
-            rigRoot = characterController != null ? characterController.transform : transform;
-        }
-
-        if (headTransform == null)
-        {
-            headTransform = ResolveHeadTransform();
-        }
-    }
-
-    private Transform ResolveHeadTransform()
-    {
-        if (Camera.main != null)
-        {
-            return Camera.main.transform;
-        }
-
-        Camera[] cameras = FindObjectsOfType<Camera>();
-        return cameras.Length > 0 ? cameras[0].transform : null;
     }
 
     private bool EnableAction(InputActionReference actionReference)

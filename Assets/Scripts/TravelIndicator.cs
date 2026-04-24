@@ -45,7 +45,13 @@ public class TravelIndicator : MonoBehaviour {
         When Unity Component is added or reset, this sets defaults: Hooks up indicatorOrigin, Grabs LineRenderer 
     */
     private void Reset() {
-        ResolveReferences();
+        indicatorOrigin = transform;
+        lineRenderer = GetComponent<LineRenderer>();
+
+        if (Camera.main != null) {
+            movementReference = Camera.main.transform;
+        }
+
         ConfigureLineRenderer();
     }
 
@@ -53,7 +59,10 @@ public class TravelIndicator : MonoBehaviour {
         Before gameplay starts, we make sure the LineRenderer reference exists and is configured
     */
     private void Awake() {
-        ResolveReferences();
+        if (lineRenderer == null) {
+            lineRenderer = GetComponent<LineRenderer>();
+        }
+
         ConfigureLineRenderer();
     }
 
@@ -61,7 +70,6 @@ public class TravelIndicator : MonoBehaviour {
         Activate moveAction and turnAction for specified component
     */
     private void OnEnable() {
-        ResolveReferences();
         moveActionWasEnabled = EnableAction(moveAction);
         turnActionWasEnabled = EnableAction(turnAction);
     }
@@ -80,10 +88,6 @@ public class TravelIndicator : MonoBehaviour {
         Each frame, show a move pointer, a turn arc, or hide the indicator if there is no input.
     **/
     private void Update() {
-        if (indicatorOrigin == null || lineRenderer == null || movementReference == null) {
-            ResolveReferences();
-        }
-
         if (indicatorOrigin == null || lineRenderer == null) {
             return;
         }
@@ -246,29 +250,6 @@ public class TravelIndicator : MonoBehaviour {
         }
 
         return forward.normalized;
-    }
-
-    private void ResolveReferences() {
-        if (indicatorOrigin == null) {
-            indicatorOrigin = transform;
-        }
-
-        if (lineRenderer == null) {
-            lineRenderer = GetComponent<LineRenderer>();
-        }
-
-        if (movementReference == null) {
-            movementReference = ResolveMovementReference();
-        }
-    }
-
-    private Transform ResolveMovementReference() {
-        if (Camera.main != null) {
-            return Camera.main.transform;
-        }
-
-        Camera[] cameras = FindObjectsOfType<Camera>();
-        return cameras.Length > 0 ? cameras[0].transform : null;
     }
 
     private void ConfigureLineRenderer() {
