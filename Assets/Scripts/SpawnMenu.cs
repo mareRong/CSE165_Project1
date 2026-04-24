@@ -15,7 +15,7 @@ public class SpawnMenu : MonoBehaviour
     public LayerMask placementMask = ~0;
 
     [Header("Menu Display")]
-    public bool showMenuOnScreen = false;
+    public bool showMenuOnScreen = true;
     public float menuScale = 1.2f;
     public float menuScreenWidth = 260f;
 
