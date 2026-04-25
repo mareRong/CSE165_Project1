@@ -11,6 +11,7 @@ using UnityEngine.XR;
     **/
 public class TravelIndicator : MonoBehaviour {
     private const string DefaultLineShaderName = "Sprites/Default";
+    private const float DefaultLineWidth = 0.035f;
 
     /**
         We group fields by headers (i.e. "Scene References", "Desktop Fallback Input", "XR Thumbsticks", "Pointer Tuning").
@@ -37,6 +38,7 @@ public class TravelIndicator : MonoBehaviour {
     [SerializeField, Range(15f, 180f)] private float turnArcDegrees = 65f; // Default turning arc degress, must be between 15f & 180f
     [SerializeField, Range(3, 24)] private int turnArcSegments = 10; //Default # of line segments to set up turnArc, must be between 3 & 24
     [SerializeField] private float verticalOffset = -0.03f; //
+    [SerializeField, Min(0f)] private float forwardOffset = 0.35f; // Pull the indicator slightly ahead of the user for better visibility
     [SerializeField] private Color moveColor = new Color(0.17f, 0.9f, 0.78f, 1f); // Color of movement arrow
     [SerializeField] private Color turnColor = new Color(1f, 0.73f, 0.21f, 1f); // Color of turning arc
 
@@ -174,7 +176,13 @@ public class TravelIndicator : MonoBehaviour {
 
     **/
     private Vector3 GetOriginPoint() {
-        return indicatorOrigin.position + Vector3.up * verticalOffset;
+        Vector3 origin = indicatorOrigin.position + Vector3.up * verticalOffset;
+
+        if (forwardOffset > 0f) {
+            origin += GetPlanarForward() * forwardOffset;
+        }
+
+        return origin;
     }
 
     private Vector2 GetPreferredInput(XRNode xrNode, InputActionReference actionReference) {
@@ -271,7 +279,7 @@ public class TravelIndicator : MonoBehaviour {
         lineRenderer.useWorldSpace = true;
         lineRenderer.loop = false;
         lineRenderer.alignment = LineAlignment.View;
-        lineRenderer.widthMultiplier = 0.01f;
+        lineRenderer.widthMultiplier = DefaultLineWidth;
         lineRenderer.numCapVertices = 4;
         lineRenderer.numCornerVertices = 4;
         lineRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;

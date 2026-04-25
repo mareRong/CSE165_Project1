@@ -1759,11 +1759,12 @@ MonoBehaviour:
   turnHand: 5
   preferXRThumbsticks: 1
   deadZone: 0.2
-  movePointerLength: 1.25
+  movePointerLength: 1.75
   turnArcRadius: 0.75
   turnArcDegrees: 65
   turnArcSegments: 10
-  verticalOffset: -0.03
+  verticalOffset: 0.08
+  forwardOffset: 0.35
   moveColor: {r: 0.17, g: 0.9, b: 0.78, a: 1}
   turnColor: {r: 1, g: 0.73, b: 0.21, a: 1}
 --- !u!120 &1277056582
