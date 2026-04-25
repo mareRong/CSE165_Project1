@@ -10,6 +10,8 @@ using UnityEngine.XR;
         in every frame, then shows a line or arc that tells you which way you should move or turn. 
     **/
 public class TravelIndicator : MonoBehaviour {
+    private const string DefaultLineShaderName = "Sprites/Default";
+
     /**
         We group fields by headers (i.e. "Scene References", "Desktop Fallback Input", "XR Thumbsticks", "Pointer Tuning").
         The script renders these fields in the inspector and ensure that only this class alone can access it.
@@ -255,6 +257,15 @@ public class TravelIndicator : MonoBehaviour {
     private void ConfigureLineRenderer() {
         if (lineRenderer == null) {
             return;
+        }
+
+        // Assign a simple default material if the scene object does not have one,
+        // otherwise the line can exist but render invisibly on device.
+        if (lineRenderer.sharedMaterial == null) {
+            Shader lineShader = Shader.Find(DefaultLineShaderName);
+            if (lineShader != null) {
+                lineRenderer.sharedMaterial = new Material(lineShader);
+            }
         }
 
         lineRenderer.useWorldSpace = true;
