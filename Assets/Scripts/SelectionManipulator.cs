@@ -225,6 +225,10 @@ public class SelectionManipulator : MonoBehaviour
     // ===================== SELECTION =====================
     private GameObject GetMainSelectableObject(Collider col)
     {
+        SelectableObject selectable = col.GetComponentInParent<SelectableObject>();
+        if (selectable != null)
+            return selectable.gameObject;
+
         if (col.attachedRigidbody != null)
             return col.attachedRigidbody.gameObject;
 

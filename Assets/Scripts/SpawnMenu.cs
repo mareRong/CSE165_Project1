@@ -283,6 +283,8 @@ public class SpawnMenu : MonoBehaviour
             rb.isKinematic = false;
         }
 
+        ConfigureSpawnedObject(previewObject);
+
         previewObject = null;
         selectedPrefab = null;
 
@@ -300,6 +302,23 @@ public class SpawnMenu : MonoBehaviour
             multiSelectedPrefabs.Remove(prefab);
         else
             multiSelectedPrefabs.Add(prefab);
+    }
+
+    private void ConfigureSpawnedObject(GameObject obj)
+    {
+        if (obj == null)
+            return;
+
+        // Multi-spawn previews use an empty parent, so configure each spawned child instead.
+        if (obj.transform.childCount > 0 && obj.GetComponent<Renderer>() == null && obj.GetComponent<Collider>() == null)
+        {
+            for (int i = 0; i < obj.transform.childCount; i++)
+                RuntimeInteractableSetup.ConfigureInteractableHierarchy(obj.transform.GetChild(i).gameObject);
+
+            return;
+        }
+
+        RuntimeInteractableSetup.ConfigureInteractableHierarchy(obj);
     }
 
     private void PreparePreviewObject(GameObject obj)

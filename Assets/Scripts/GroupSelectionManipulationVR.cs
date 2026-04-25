@@ -483,6 +483,7 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         selectorLine.numCornerVertices = 4;
         selectorLine.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         selectorLine.receiveShadows = false;
+        selectorLine.enabled = false;
 
         GameObject candidateLineObject = new GameObject("GroupCandidateLine");
         candidateLineObject.transform.SetParent(transform, false);
@@ -501,6 +502,7 @@ public class GroupSelectionManipulationVR : MonoBehaviour
 
         selectorSphere = CreateIndicatorPrimitive("GroupSelectionBubble", selectorRadius * 2f);
         selectorRenderer = selectorSphere.GetComponent<Renderer>();
+        selectorSphere.gameObject.SetActive(false);
 
         candidateSphere = CreateIndicatorPrimitive("GroupCandidateIndicator", 0.12f);
         candidateRenderer = candidateSphere.GetComponent<Renderer>();
@@ -508,6 +510,7 @@ public class GroupSelectionManipulationVR : MonoBehaviour
 
         pivotSphere = CreateIndicatorPrimitive("GroupPivotIndicator", 0.08f);
         pivotRenderer = pivotSphere.GetComponent<Renderer>();
+        pivotSphere.gameObject.SetActive(false);
     }
 
     private Transform CreateIndicatorPrimitive(string objectName, float uniformScale)
@@ -543,10 +546,21 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         if (selectionHand == null || selectorLine == null || selectorSphere == null || pivotSphere == null)
             return;
 
+        bool showPrimaryIndicator = manipulationMode || selectedObjects.Count > 0 || candidateObject != null;
+        selectorLine.enabled = showPrimaryIndicator;
+        selectorSphere.gameObject.SetActive(showPrimaryIndicator);
+
+        if (!showPrimaryIndicator)
+        {
+            candidateLine.enabled = false;
+            candidateSphere.gameObject.SetActive(false);
+            pivotSphere.gameObject.SetActive(false);
+            return;
+        }
+
         Vector3 center = GetSelectionCenter();
         Color lineColor = selectedObjects.Count > 0 ? selectedColor : (candidateObject != null ? candidateColor : idleColor);
 
-        selectorLine.enabled = true;
         selectorLine.startColor = lineColor;
         selectorLine.endColor = lineColor;
         selectorLine.SetPosition(0, selectionHand.position);
