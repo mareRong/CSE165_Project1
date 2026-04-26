@@ -59,7 +59,7 @@ public class GroupSelectionManipulationVR : MonoBehaviour
     public Color menuSelectedRowColor = new Color(0.2f, 1f, 0.45f, 1f);
 
     private readonly List<SelectableObject> selectedObjects = new List<SelectableObject>();
-    private readonly List<SelectableObject> nearbyObjects = new List<SelectableObject>();
+    private readonly List<SelectableObject> menuObjects = new List<SelectableObject>();
     private readonly Dictionary<Rigidbody, RigidbodyState> rigidbodyStates = new Dictionary<Rigidbody, RigidbodyState>();
     private readonly List<MenuRowVisual> menuRows = new List<MenuRowVisual>();
 
@@ -99,7 +99,7 @@ public class GroupSelectionManipulationVR : MonoBehaviour
 
         CleanupSelection();
         ReadButtons();
-        UpdateNearbyObjects();
+        UpdateMenuObjects();
         UpdateMenuAnchor();
 
         if (manipulationMode)
@@ -117,7 +117,7 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         {
             if (TriggerDown())
             {
-                if (nearbyObjects.Count > 0)
+                if (menuObjects.Count > 0)
                 {
                     OpenMenu();
                 }
@@ -223,28 +223,21 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         return gripPressed && !prevGripPressed;
     }
 
-    private void UpdateNearbyObjects()
+    private void UpdateMenuObjects()
     {
-        nearbyObjects.Clear();
+        menuObjects.Clear();
 
-        if (selectionHand == null)
-            return;
-
-        Vector3 center = GetSelectionCenter();
-        Collider[] hits = Physics.OverlapSphere(center, selectorRadius, selectableMask, QueryTriggerInteraction.Ignore);
-        HashSet<SelectableObject> seenObjects = new HashSet<SelectableObject>();
-
-        for (int i = 0; i < hits.Length; i++)
+        SelectableObject[] allSelectables = FindObjectsOfType<SelectableObject>(true);
+        for (int i = 0; i < allSelectables.Length; i++)
         {
-            SelectableObject selectable = hits[i].GetComponentInParent<SelectableObject>();
-            if (selectable == null || seenObjects.Contains(selectable))
+            SelectableObject selectable = allSelectables[i];
+            if (selectable == null || !selectable.gameObject.activeInHierarchy)
                 continue;
 
-            seenObjects.Add(selectable);
-            nearbyObjects.Add(selectable);
+            menuObjects.Add(selectable);
         }
 
-        nearbyObjects.Sort(CompareSelectableObjects);
+        menuObjects.Sort(CompareSelectableObjects);
 
         if (!menuOpen)
             return;
@@ -260,13 +253,11 @@ public class GroupSelectionManipulationVR : MonoBehaviour
 
     private int CompareSelectableObjects(SelectableObject a, SelectableObject b)
     {
-        float distanceA = Vector3.Distance(GetSelectionCenter(), a.transform.position);
-        float distanceB = Vector3.Distance(GetSelectionCenter(), b.transform.position);
+        int nameCompare = string.Compare(a.name, b.name, System.StringComparison.Ordinal);
+        if (nameCompare != 0)
+            return nameCompare;
 
-        if (!Mathf.Approximately(distanceA, distanceB))
-            return distanceA.CompareTo(distanceB);
-
-        return string.Compare(a.name, b.name, System.StringComparison.Ordinal);
+        return a.GetInstanceID().CompareTo(b.GetInstanceID());
     }
 
     private Vector3 GetSelectionCenter()
@@ -279,7 +270,7 @@ public class GroupSelectionManipulationVR : MonoBehaviour
 
     private void OpenMenu()
     {
-        if (nearbyObjects.Count == 0)
+        if (menuObjects.Count == 0)
             return;
 
         menuOpen = true;
@@ -306,7 +297,7 @@ public class GroupSelectionManipulationVR : MonoBehaviour
 
     private void ActivateMenuEntry()
     {
-        int objectCount = nearbyObjects.Count;
+        int objectCount = menuObjects.Count;
         if (objectCount == 0)
         {
             CloseMenu();
@@ -315,7 +306,7 @@ public class GroupSelectionManipulationVR : MonoBehaviour
 
         if (menuIndex < objectCount)
         {
-            ToggleSelection(nearbyObjects[menuIndex]);
+            ToggleSelection(menuObjects[menuIndex]);
             UpdateMenuVisuals();
             return;
         }
@@ -327,10 +318,10 @@ public class GroupSelectionManipulationVR : MonoBehaviour
 
     private int GetMenuEntryCount()
     {
-        if (nearbyObjects.Count == 0)
+        if (menuObjects.Count == 0)
             return 0;
 
-        return nearbyObjects.Count + 1;
+        return menuObjects.Count + 1;
     }
 
     private void ToggleSelection(SelectableObject selectable)
@@ -682,7 +673,7 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         if (menuRoot == null || menuPanel == null || menuTitleText == null || menuHintText == null)
             return;
 
-        if (!menuOpen || nearbyObjects.Count == 0)
+        if (!menuOpen || menuObjects.Count == 0)
         {
             menuRoot.gameObject.SetActive(false);
             return;
@@ -690,7 +681,7 @@ public class GroupSelectionManipulationVR : MonoBehaviour
 
         menuRoot.gameObject.SetActive(true);
 
-        int objectCount = nearbyObjects.Count;
+        int objectCount = menuObjects.Count;
         int visibleObjectRows = Mathf.Min(objectCount, Mathf.Max(1, maxVisibleRows));
         int visibleRows = visibleObjectRows + 1;
         float menuHeight = 0.09f + visibleRows * rowHeight;
@@ -713,7 +704,7 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         {
             int objectIndex = scrollStart + rowSlot;
             MenuRowVisual row = menuRows[rowSlot];
-            SelectableObject selectable = nearbyObjects[objectIndex];
+            SelectableObject selectable = menuObjects[objectIndex];
             bool isFocused = menuIndex == objectIndex;
             bool isSelected = selectedObjects.Contains(selectable);
 
