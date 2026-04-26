@@ -3122,7 +3122,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2100001000}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dc16442fe911a425b8839f3a01ba7f4c, type: 3}
   m_Name: 
@@ -3143,16 +3143,26 @@ MonoBehaviour:
   selectableMask:
     serializedVersion: 2
     m_Bits: 4294967295
-  selectorDistance: 0.45
-  selectorRadius: 0.28
-  indicatorLineWidth: 0.008
+  selectorDistance: 0.65
+  selectorRadius: 1.1
+  menuDistance: 0.42
+  menuVerticalOffset: 0.08
+  menuWidth: 0.28
+  rowHeight: 0.06
+  maxVisibleRows: 4
+  menuDepth: 0.004
+  menuRowDepth: 0.002
+  menuRowForwardOffset: 0.015
+  menuTextForwardOffset: 0.026
   scaleSensitivity: 1.1
   duplicateOffset: 0.35
   minObjectScale: 0.1
   maxObjectScale: 4
-  idleColor: {r: 0.3, g: 0.7, b: 1, a: 1}
-  candidateColor: {r: 1, g: 0.82, b: 0.25, a: 1}
   selectedColor: {r: 0.2, g: 1, b: 0.45, a: 1}
+  menuBackgroundColor: {r: 0.1, g: 0.12, b: 0.16, a: 0.95}
+  menuRowColor: {r: 0.94, g: 0.94, b: 0.96, a: 0.95}
+  menuFocusedRowColor: {r: 1, g: 0.82, b: 0.25, a: 1}
+  menuSelectedRowColor: {r: 0.2, g: 1, b: 0.45, a: 1}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
