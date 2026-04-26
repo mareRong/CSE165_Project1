@@ -5,6 +5,9 @@ using UnityEngine.XR;
 // object selection, and move/rotate/scale manipulation.
 public class SelectionManipulator : MonoBehaviour
 {
+    private const string DefaultLineShaderName = "Sprites/Default";
+    private const string PreferredIndicatorShaderName = "Universal Render Pipeline/Unlit";
+
     // ===================== RAY SETTINGS =====================
     [Header("Ray Settings")]
     public Transform rayOrigin;
@@ -64,6 +67,8 @@ public class SelectionManipulator : MonoBehaviour
 
         if (rayOrigin == null)
             rayOrigin = transform;
+
+        EnsureIndicatorReferences();
 
         if (lineRenderer != null)
             lineRenderer.enabled = false;
@@ -149,6 +154,69 @@ public class SelectionManipulator : MonoBehaviour
     }
 
     // ===================== INDICATOR =====================
+    private void EnsureIndicatorReferences()
+    {
+        if (lineRenderer == null)
+            lineRenderer = CreateLineIndicator();
+
+        if (hitPointVisual == null)
+            hitPointVisual = CreateHitPointIndicator();
+    }
+
+    private LineRenderer CreateLineIndicator()
+    {
+        GameObject lineObject = new GameObject("SelectionManipulatorLine");
+        lineObject.transform.SetParent(transform, false);
+
+        LineRenderer createdLine = lineObject.AddComponent<LineRenderer>();
+        createdLine.useWorldSpace = true;
+        createdLine.positionCount = 2;
+        createdLine.loop = false;
+        createdLine.alignment = LineAlignment.View;
+        createdLine.widthMultiplier = 0.01f;
+        createdLine.numCapVertices = 4;
+        createdLine.numCornerVertices = 4;
+        createdLine.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        createdLine.receiveShadows = false;
+        createdLine.textureMode = LineTextureMode.Stretch;
+        createdLine.startColor = hoverColor;
+        createdLine.endColor = hoverColor;
+
+        Shader lineShader = Shader.Find(DefaultLineShaderName);
+        if (lineShader != null)
+            createdLine.sharedMaterial = new Material(lineShader);
+
+        return createdLine;
+    }
+
+    private Transform CreateHitPointIndicator()
+    {
+        GameObject marker = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        marker.name = "SelectionManipulatorHitPoint";
+        marker.transform.SetParent(transform, false);
+        marker.transform.localScale = Vector3.one * 0.06f;
+
+        Collider markerCollider = marker.GetComponent<Collider>();
+        if (markerCollider != null)
+            Destroy(markerCollider);
+
+        Renderer markerRenderer = marker.GetComponent<Renderer>();
+        markerRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        markerRenderer.receiveShadows = false;
+
+        Shader shader = Shader.Find(PreferredIndicatorShaderName);
+        if (shader == null)
+            shader = Shader.Find("Universal Render Pipeline/Lit");
+        if (shader == null)
+            shader = Shader.Find("Standard");
+
+        if (shader != null)
+            markerRenderer.material = new Material(shader);
+
+        markerRenderer.material.color = hoverColor;
+        return marker.transform;
+    }
+
     private void UpdateIndicator()
     {
         if (rayOrigin == null || lineRenderer == null)

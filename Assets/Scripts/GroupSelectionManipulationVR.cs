@@ -4,6 +4,9 @@ using UnityEngine.XR;
 
 public class GroupSelectionManipulationVR : MonoBehaviour
 {
+    private const string DefaultLineShaderName = "Sprites/Default";
+    private const string PreferredIndicatorShaderName = "Universal Render Pipeline/Unlit";
+
     private enum GroupManipulationMode
     {
         Move,
@@ -474,31 +477,13 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         lineObject.transform.SetParent(transform, false);
 
         selectorLine = lineObject.AddComponent<LineRenderer>();
-        selectorLine.useWorldSpace = true;
-        selectorLine.positionCount = 2;
-        selectorLine.loop = false;
-        selectorLine.alignment = LineAlignment.View;
-        selectorLine.widthMultiplier = indicatorLineWidth;
-        selectorLine.numCapVertices = 4;
-        selectorLine.numCornerVertices = 4;
-        selectorLine.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-        selectorLine.receiveShadows = false;
-        selectorLine.enabled = false;
+        ConfigureLineRenderer(selectorLine, indicatorLineWidth);
 
         GameObject candidateLineObject = new GameObject("GroupCandidateLine");
         candidateLineObject.transform.SetParent(transform, false);
 
         candidateLine = candidateLineObject.AddComponent<LineRenderer>();
-        candidateLine.useWorldSpace = true;
-        candidateLine.positionCount = 2;
-        candidateLine.loop = false;
-        candidateLine.alignment = LineAlignment.View;
-        candidateLine.widthMultiplier = indicatorLineWidth * 0.75f;
-        candidateLine.numCapVertices = 4;
-        candidateLine.numCornerVertices = 4;
-        candidateLine.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-        candidateLine.receiveShadows = false;
-        candidateLine.enabled = false;
+        ConfigureLineRenderer(candidateLine, indicatorLineWidth * 0.75f);
 
         selectorSphere = CreateIndicatorPrimitive("GroupSelectionBubble", selectorRadius * 2f);
         selectorRenderer = selectorSphere.GetComponent<Renderer>();
@@ -532,13 +517,47 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         return primitive.transform;
     }
 
+    private void ConfigureLineRenderer(LineRenderer target, float width)
+    {
+        target.useWorldSpace = true;
+        target.positionCount = 2;
+        target.loop = false;
+        target.alignment = LineAlignment.View;
+        target.widthMultiplier = width;
+        target.numCapVertices = 4;
+        target.numCornerVertices = 4;
+        target.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        target.receiveShadows = false;
+        target.textureMode = LineTextureMode.Stretch;
+
+        if (target.sharedMaterial == null)
+        {
+            Shader lineShader = Shader.Find(DefaultLineShaderName);
+            if (lineShader != null)
+                target.sharedMaterial = new Material(lineShader);
+        }
+
+        target.enabled = false;
+    }
+
     private Shader FindIndicatorShader()
     {
-        Shader shader = Shader.Find("Universal Render Pipeline/Lit");
+        Shader shader = Shader.Find(PreferredIndicatorShaderName);
+        if (shader == null)
+            shader = Shader.Find("Universal Render Pipeline/Lit");
         if (shader == null)
             shader = Shader.Find("Standard");
 
         return shader;
+    }
+
+    private void ApplyIndicatorColor(Renderer renderer, Color color, float alpha)
+    {
+        if (renderer == null)
+            return;
+
+        Color tinted = new Color(color.r, color.g, color.b, alpha);
+        renderer.material.color = tinted;
     }
 
     private void UpdateIndicators()
@@ -568,7 +587,7 @@ public class GroupSelectionManipulationVR : MonoBehaviour
 
         selectorSphere.position = center;
         selectorSphere.localScale = Vector3.one * selectorRadius * 2f;
-        selectorRenderer.material.color = lineColor;
+        ApplyIndicatorColor(selectorRenderer, lineColor, 0.35f);
 
         bool showCandidate = candidateObject != null && !selectedObjects.Contains(candidateObject);
         candidateSphere.gameObject.SetActive(showCandidate);
@@ -577,7 +596,7 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         {
             Vector3 candidatePosition = candidateObject.transform.position;
             candidateSphere.position = candidatePosition;
-            candidateRenderer.material.color = candidateColor;
+            ApplyIndicatorColor(candidateRenderer, candidateColor, 0.9f);
             candidateLine.startColor = candidateColor;
             candidateLine.endColor = candidateColor;
             candidateLine.SetPosition(0, center);
@@ -589,7 +608,7 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         if (showPivot)
         {
             pivotSphere.position = GetGroupPivot();
-            pivotRenderer.material.color = selectedColor;
+            ApplyIndicatorColor(pivotRenderer, selectedColor, 0.95f);
         }
     }
 
