@@ -35,15 +35,15 @@ public class GroupSelectionManipulationVR : MonoBehaviour
     public float selectorRadius = 1.1f;
 
     [Header("Menu Layout")]
-    public float menuDistance = 0.42f;
-    public float menuVerticalOffset = 0.08f;
-    public float menuWidth = 0.28f;
-    public float rowHeight = 0.06f;
-    public int maxVisibleRows = 4;
-    public float menuDepth = 0.004f;
-    public float menuRowDepth = 0.002f;
-    public float menuRowForwardOffset = 0.015f;
-    public float menuTextForwardOffset = 0.026f;
+    public float menuDistance = 0.36f;
+    public float menuVerticalOffset = 0.05f;
+    public float menuWidth = 0.18f;
+    public float rowHeight = 0.045f;
+    public int maxVisibleRows = 3;
+    public float menuDepth = 0.012f;
+    public float menuRowDepth = 0.006f;
+    public float menuRowForwardOffset = 0.008f;
+    public float menuTextForwardOffset = 0.016f;
 
     [Header("Manipulation")]
     public float scaleSensitivity = 1.1f;
@@ -57,6 +57,7 @@ public class GroupSelectionManipulationVR : MonoBehaviour
     public Color menuRowColor = new Color(0.94f, 0.94f, 0.96f, 0.95f);
     public Color menuFocusedRowColor = new Color(1f, 0.82f, 0.25f, 1f);
     public Color menuSelectedRowColor = new Color(0.2f, 1f, 0.45f, 1f);
+    public Color menuBorderColor = new Color(0.78f, 0.82f, 0.9f, 1f);
 
     private readonly List<SelectableObject> selectedObjects = new List<SelectableObject>();
     private readonly List<SelectableObject> menuObjects = new List<SelectableObject>();
@@ -68,6 +69,8 @@ public class GroupSelectionManipulationVR : MonoBehaviour
     private bool prevGripPressed;
     private bool triggerPressed;
     private bool gripPressed;
+    private Vector2 thumbstickAxis;
+    private bool thumbstickScrollReady = true;
 
     private bool menuOpen;
     private int menuIndex;
@@ -79,6 +82,8 @@ public class GroupSelectionManipulationVR : MonoBehaviour
     private Transform menuRoot;
     private Transform menuPanel;
     private Renderer menuPanelRenderer;
+    private Transform menuBorder;
+    private Renderer menuBorderRenderer;
     private TextMesh menuTitleText;
     private TextMesh menuHintText;
 
@@ -130,9 +135,10 @@ public class GroupSelectionManipulationVR : MonoBehaviour
             return;
         }
 
-        if (GripDown())
+        int scrollDirection = GetThumbstickScrollDirection();
+        if (scrollDirection != 0)
         {
-            AdvanceMenuIndex();
+            AdvanceMenuIndex(scrollDirection);
         }
 
         if (TriggerDown())
@@ -211,6 +217,7 @@ public class GroupSelectionManipulationVR : MonoBehaviour
 
         leftDevice.TryGetFeatureValue(CommonUsages.triggerButton, out triggerPressed);
         leftDevice.TryGetFeatureValue(CommonUsages.gripButton, out gripPressed);
+        leftDevice.TryGetFeatureValue(CommonUsages.primary2DAxis, out thumbstickAxis);
     }
 
     private bool TriggerDown()
@@ -285,13 +292,46 @@ public class GroupSelectionManipulationVR : MonoBehaviour
             menuRoot.gameObject.SetActive(false);
     }
 
-    private void AdvanceMenuIndex()
+    private int GetThumbstickScrollDirection()
+    {
+        const float scrollThreshold = 0.65f;
+        const float resetThreshold = 0.35f;
+
+        if (!leftDevice.isValid)
+            return 0;
+
+        float y = thumbstickAxis.y;
+
+        if (!thumbstickScrollReady)
+        {
+            if (Mathf.Abs(y) <= resetThreshold)
+                thumbstickScrollReady = true;
+
+            return 0;
+        }
+
+        if (y >= scrollThreshold)
+        {
+            thumbstickScrollReady = false;
+            return -1;
+        }
+
+        if (y <= -scrollThreshold)
+        {
+            thumbstickScrollReady = false;
+            return 1;
+        }
+
+        return 0;
+    }
+
+    private void AdvanceMenuIndex(int direction)
     {
         int entryCount = GetMenuEntryCount();
         if (entryCount == 0)
             return;
 
-        menuIndex = (menuIndex + 1) % entryCount;
+        menuIndex = (menuIndex + direction + entryCount) % entryCount;
         UpdateMenuVisuals();
     }
 
@@ -586,8 +626,18 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         menuPanelRenderer.material = new Material(FindIndicatorShader());
         menuPanelRenderer.material.color = menuBackgroundColor;
 
-        menuTitleText = CreateMenuText("MenuTitle", menuRoot, 0.032f, TextAnchor.MiddleLeft);
-        menuHintText = CreateMenuText("MenuHint", menuRoot, 0.022f, TextAnchor.MiddleLeft);
+        menuBorder = GameObject.CreatePrimitive(PrimitiveType.Cube).transform;
+        menuBorder.name = "MenuBorder";
+        menuBorder.SetParent(menuRoot, false);
+        Destroy(menuBorder.GetComponent<Collider>());
+        menuBorderRenderer = menuBorder.GetComponent<Renderer>();
+        menuBorderRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        menuBorderRenderer.receiveShadows = false;
+        menuBorderRenderer.material = new Material(FindIndicatorShader());
+        menuBorderRenderer.material.color = menuBorderColor;
+
+        menuTitleText = CreateMenuText("MenuTitle", menuRoot, 0.022f, TextAnchor.MiddleLeft);
+        menuHintText = CreateMenuText("MenuHint", menuRoot, 0.016f, TextAnchor.MiddleLeft);
 
         int totalRows = Mathf.Max(1, maxVisibleRows + 1);
         for (int i = 0; i < totalRows; i++)
@@ -606,7 +656,7 @@ public class GroupSelectionManipulationVR : MonoBehaviour
             row.BackgroundRenderer.receiveShadows = false;
             row.BackgroundRenderer.material = new Material(FindIndicatorShader());
 
-            row.Label = CreateMenuText("Label", row.Root, 0.026f, TextAnchor.MiddleLeft);
+            row.Label = CreateMenuText("Label", row.Root, 0.019f, TextAnchor.MiddleLeft);
             menuRows.Add(row);
         }
     }
@@ -684,20 +734,31 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         int objectCount = menuObjects.Count;
         int visibleObjectRows = Mathf.Min(objectCount, Mathf.Max(1, maxVisibleRows));
         int visibleRows = visibleObjectRows + 1;
-        float menuHeight = 0.09f + visibleRows * rowHeight;
+        float headerHeight = 0.075f;
+        float footerHeight = 0.028f;
+        float menuHeight = headerHeight + visibleRows * rowHeight + footerHeight;
+        float borderInset = 0.006f;
 
         menuPanel.localScale = new Vector3(menuWidth, menuHeight, menuDepth);
-        menuPanel.localPosition = new Vector3(0f, -menuHeight * 0.5f, 0f);
+        menuPanel.localPosition = new Vector3(0f, -menuHeight * 0.5f, 0.002f);
 
-        menuTitleText.text = "Selection Menu";
-        menuTitleText.transform.localPosition = new Vector3(-menuWidth * 0.44f, -0.035f, -menuTextForwardOffset);
-
-        menuHintText.text = "Grip: scroll   Trigger: toggle / confirm";
-        menuHintText.transform.localPosition = new Vector3(-menuWidth * 0.44f, -0.075f, -menuTextForwardOffset);
+        if (menuBorder != null)
+        {
+            menuBorder.localScale = new Vector3(menuWidth + borderInset, menuHeight + borderInset, menuDepth * 0.5f);
+            menuBorder.localPosition = new Vector3(0f, -menuHeight * 0.5f, 0f);
+        }
 
         int scrollStart = 0;
         if (objectCount > visibleObjectRows)
             scrollStart = Mathf.Clamp(menuIndex - visibleObjectRows + 1, 0, objectCount - visibleObjectRows);
+
+        menuTitleText.text = "Group Select";
+        menuTitleText.transform.localPosition = new Vector3(-menuWidth * 0.41f, -0.024f, -menuTextForwardOffset);
+
+        int windowStart = objectCount == 0 ? 0 : scrollStart + 1;
+        int windowEnd = Mathf.Min(objectCount, scrollStart + visibleObjectRows);
+        menuHintText.text = selectedObjects.Count + " selected   " + windowStart + "-" + windowEnd + " / " + objectCount;
+        menuHintText.transform.localPosition = new Vector3(-menuWidth * 0.41f, -0.05f, -menuTextForwardOffset);
 
         int rowSlot = 0;
         for (; rowSlot < visibleObjectRows; rowSlot++)
@@ -723,7 +784,7 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         ConfigureMenuRow(
             confirmRow,
             rowSlot,
-            selectedObjects.Count > 0 ? "Confirm Selection" : "Confirm Selection (none selected)",
+            "Start Group Edit",
             confirmFocused,
             false,
             selectedObjects.Count > 0 ? selectedColor : menuRowColor);
@@ -737,12 +798,12 @@ public class GroupSelectionManipulationVR : MonoBehaviour
     {
         row.Root.gameObject.SetActive(true);
 
-        float y = -0.12f - rowIndex * rowHeight;
+        float y = -0.105f - rowIndex * rowHeight;
         row.Root.localPosition = new Vector3(0f, y, -menuRowForwardOffset);
 
         Transform rowBackground = row.BackgroundRenderer.transform;
         rowBackground.localPosition = Vector3.zero;
-        rowBackground.localScale = new Vector3(menuWidth * 0.88f, rowHeight * 0.72f, menuRowDepth);
+        rowBackground.localScale = new Vector3(menuWidth * 0.9f, rowHeight * 0.68f, menuRowDepth);
 
         Color rowColor = baseColor;
         if (isSelected)
@@ -752,7 +813,7 @@ public class GroupSelectionManipulationVR : MonoBehaviour
 
         row.BackgroundRenderer.material.color = rowColor;
         row.Label.text = label;
-        row.Label.transform.localPosition = new Vector3(-menuWidth * 0.4f, 0f, -menuTextForwardOffset);
+        row.Label.transform.localPosition = new Vector3(-menuWidth * 0.39f, 0f, -menuTextForwardOffset);
     }
 
     private void OnGUI()
@@ -767,8 +828,9 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         GUI.Box(new Rect(x, y, width, height),
             "Group Selection (Left Hand)\n" +
             "Mode: " + modeText + "\n\n" +
-            "Trigger = Open menu / toggle item / confirm selection\n" +
-            "Grip = Scroll menu\n" +
+            "Trigger = Open menu / toggle item / confirm\n" +
+            "Thumbstick = Scroll menu\n" +
+            "Grip = Exit manipulation\n" +
             "While manipulating: Trigger cycles Move -> Rotate -> Scale -> Duplicate");
     }
 }
