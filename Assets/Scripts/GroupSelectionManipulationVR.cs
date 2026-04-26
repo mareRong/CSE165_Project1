@@ -4,7 +4,6 @@ using UnityEngine.XR;
 
 public class GroupSelectionManipulationVR : MonoBehaviour
 {
-    private const string DefaultLineShaderName = "Sprites/Default";
     private const string PreferredIndicatorShaderName = "Universal Render Pipeline/Unlit";
 
     private enum GroupManipulationMode
@@ -34,7 +33,6 @@ public class GroupSelectionManipulationVR : MonoBehaviour
     [Header("Selection Query")]
     public float selectorDistance = 0.65f;
     public float selectorRadius = 1.1f;
-    public float indicatorLineWidth = 0.008f;
 
     [Header("Menu Layout")]
     public float menuDistance = 0.42f;
@@ -49,9 +47,7 @@ public class GroupSelectionManipulationVR : MonoBehaviour
     public float minObjectScale = 0.1f;
     public float maxObjectScale = 4f;
 
-    [Header("Indicator Colors")]
-    public Color idleColor = new Color(0.3f, 0.7f, 1f, 1f);
-    public Color candidateColor = new Color(1f, 0.82f, 0.25f, 1f);
+    [Header("Menu Colors")]
     public Color selectedColor = new Color(0.2f, 1f, 0.45f, 1f);
     public Color menuBackgroundColor = new Color(0.1f, 0.12f, 0.16f, 0.95f);
     public Color menuRowColor = new Color(0.94f, 0.94f, 0.96f, 0.95f);
@@ -76,15 +72,6 @@ public class GroupSelectionManipulationVR : MonoBehaviour
     private Vector3 lastHandPosition;
     private Quaternion lastHandRotation;
 
-    private LineRenderer selectorLine;
-    private LineRenderer candidateLine;
-    private Transform anchorSphere;
-    private Renderer anchorRenderer;
-    private Transform candidateSphere;
-    private Renderer candidateRenderer;
-    private Transform pivotSphere;
-    private Renderer pivotRenderer;
-
     private Transform menuRoot;
     private Transform menuPanel;
     private Renderer menuPanelRenderer;
@@ -95,7 +82,6 @@ public class GroupSelectionManipulationVR : MonoBehaviour
     {
         RefreshDevice();
         ResolveReferences();
-        CreateIndicators();
         CreateMenuVisuals();
     }
 
@@ -111,7 +97,6 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         ReadButtons();
         UpdateNearbyObjects();
         UpdateMenuAnchor();
-        UpdateIndicators();
 
         if (manipulationMode)
         {
@@ -134,12 +119,9 @@ public class GroupSelectionManipulationVR : MonoBehaviour
                 }
                 else if (selectedObjects.Count > 0)
                 {
-                    ClearSelection();
+                    OpenMenu();
                 }
             }
-
-            if (GripDown() && selectedObjects.Count > 0)
-                BeginManipulation();
 
             return;
         }
@@ -345,14 +327,6 @@ public class GroupSelectionManipulationVR : MonoBehaviour
             return 0;
 
         return nearbyObjects.Count + 1;
-    }
-
-    private SelectableObject GetFocusedObject()
-    {
-        if (!menuOpen || menuIndex < 0 || menuIndex >= nearbyObjects.Count)
-            return null;
-
-        return nearbyObjects[menuIndex];
     }
 
     private void ToggleSelection(SelectableObject selectable)
@@ -601,33 +575,6 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         return sum / selectedObjects.Count;
     }
 
-    private void CreateIndicators()
-    {
-        GameObject lineObject = new GameObject("GroupSelectionLine");
-        lineObject.transform.SetParent(transform, false);
-
-        selectorLine = lineObject.AddComponent<LineRenderer>();
-        ConfigureLineRenderer(selectorLine, indicatorLineWidth);
-
-        GameObject candidateLineObject = new GameObject("GroupCandidateLine");
-        candidateLineObject.transform.SetParent(transform, false);
-
-        candidateLine = candidateLineObject.AddComponent<LineRenderer>();
-        ConfigureLineRenderer(candidateLine, indicatorLineWidth * 0.75f);
-
-        anchorSphere = CreateIndicatorPrimitive("GroupSelectionAnchor", 0.06f);
-        anchorRenderer = anchorSphere.GetComponent<Renderer>();
-        anchorSphere.gameObject.SetActive(false);
-
-        candidateSphere = CreateIndicatorPrimitive("GroupCandidateIndicator", 0.12f);
-        candidateRenderer = candidateSphere.GetComponent<Renderer>();
-        candidateSphere.gameObject.SetActive(false);
-
-        pivotSphere = CreateIndicatorPrimitive("GroupPivotIndicator", 0.08f);
-        pivotRenderer = pivotSphere.GetComponent<Renderer>();
-        pivotSphere.gameObject.SetActive(false);
-    }
-
     private void CreateMenuVisuals()
     {
         menuRoot = new GameObject("GroupSelectionMenu").transform;
@@ -689,48 +636,6 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         return textMesh;
     }
 
-    private Transform CreateIndicatorPrimitive(string objectName, float uniformScale)
-    {
-        GameObject primitive = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-        primitive.name = objectName;
-        primitive.transform.SetParent(transform, false);
-        primitive.transform.localScale = Vector3.one * uniformScale;
-
-        Collider collider = primitive.GetComponent<Collider>();
-        if (collider != null)
-            Destroy(collider);
-
-        Renderer renderer = primitive.GetComponent<Renderer>();
-        renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-        renderer.receiveShadows = false;
-        renderer.material = new Material(FindIndicatorShader());
-
-        return primitive.transform;
-    }
-
-    private void ConfigureLineRenderer(LineRenderer target, float width)
-    {
-        target.useWorldSpace = true;
-        target.positionCount = 2;
-        target.loop = false;
-        target.alignment = LineAlignment.View;
-        target.widthMultiplier = width;
-        target.numCapVertices = 4;
-        target.numCornerVertices = 4;
-        target.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-        target.receiveShadows = false;
-        target.textureMode = LineTextureMode.Stretch;
-
-        if (target.sharedMaterial == null)
-        {
-            Shader lineShader = Shader.Find(DefaultLineShaderName);
-            if (lineShader != null)
-                target.sharedMaterial = new Material(lineShader);
-        }
-
-        target.enabled = false;
-    }
-
     private Shader FindIndicatorShader()
     {
         Shader shader = Shader.Find(PreferredIndicatorShaderName);
@@ -740,15 +645,6 @@ public class GroupSelectionManipulationVR : MonoBehaviour
             shader = Shader.Find("Standard");
 
         return shader;
-    }
-
-    private void ApplyIndicatorColor(Renderer renderer, Color color, float alpha)
-    {
-        if (renderer == null)
-            return;
-
-        Color tinted = new Color(color.r, color.g, color.b, alpha);
-        renderer.material.color = tinted;
     }
 
     private void UpdateMenuAnchor()
@@ -864,61 +760,6 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         row.Label.transform.localPosition = new Vector3(-menuWidth * 0.4f, 0f, -0.006f);
     }
 
-    private void UpdateIndicators()
-    {
-        if (selectionHand == null || selectorLine == null || anchorSphere == null || pivotSphere == null)
-            return;
-
-        bool hasNearbyObjects = nearbyObjects.Count > 0;
-        bool showPrimaryIndicator = manipulationMode || selectedObjects.Count > 0 || hasNearbyObjects || menuOpen;
-        selectorLine.enabled = showPrimaryIndicator;
-        anchorSphere.gameObject.SetActive(showPrimaryIndicator);
-
-        if (!showPrimaryIndicator)
-        {
-            candidateLine.enabled = false;
-            candidateSphere.gameObject.SetActive(false);
-            pivotSphere.gameObject.SetActive(false);
-            if (menuRoot != null)
-                menuRoot.gameObject.SetActive(false);
-            return;
-        }
-
-        Vector3 center = GetSelectionCenter();
-        Color lineColor = selectedObjects.Count > 0 ? selectedColor : (hasNearbyObjects ? candidateColor : idleColor);
-
-        selectorLine.startColor = lineColor;
-        selectorLine.endColor = lineColor;
-        selectorLine.SetPosition(0, selectionHand.position);
-        selectorLine.SetPosition(1, center);
-
-        anchorSphere.position = center;
-        ApplyIndicatorColor(anchorRenderer, lineColor, 0.8f);
-
-        SelectableObject focusedObject = GetFocusedObject();
-        bool showCandidate = menuOpen && focusedObject != null;
-        candidateSphere.gameObject.SetActive(showCandidate);
-        candidateLine.enabled = showCandidate;
-        if (showCandidate)
-        {
-            Vector3 candidatePosition = focusedObject.transform.position;
-            candidateSphere.position = candidatePosition;
-            ApplyIndicatorColor(candidateRenderer, candidateColor, 0.9f);
-            candidateLine.startColor = candidateColor;
-            candidateLine.endColor = candidateColor;
-            candidateLine.SetPosition(0, center);
-            candidateLine.SetPosition(1, candidatePosition);
-        }
-
-        bool showPivot = selectedObjects.Count > 0;
-        pivotSphere.gameObject.SetActive(showPivot);
-        if (showPivot)
-        {
-            pivotSphere.position = GetGroupPivot();
-            ApplyIndicatorColor(pivotRenderer, selectedColor, 0.95f);
-        }
-    }
-
     private void OnGUI()
     {
         float width = 460f;
@@ -932,7 +773,7 @@ public class GroupSelectionManipulationVR : MonoBehaviour
             "Group Selection (Left Hand)\n" +
             "Mode: " + modeText + "\n\n" +
             "Trigger = Open menu / toggle item / confirm selection\n" +
-            "Grip = Scroll menu or enter/exit manipulation\n" +
+            "Grip = Scroll menu\n" +
             "While manipulating: Trigger cycles Move -> Rotate -> Scale -> Duplicate");
     }
 }
