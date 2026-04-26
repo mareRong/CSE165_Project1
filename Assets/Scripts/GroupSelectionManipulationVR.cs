@@ -37,13 +37,13 @@ public class GroupSelectionManipulationVR : MonoBehaviour
     [Header("Menu Layout")]
     public float menuDistance = 0.36f;
     public float menuVerticalOffset = 0.05f;
-    public float menuWidth = 0.18f;
-    public float rowHeight = 0.045f;
+    public float menuWidth = 0.24f;
+    public float rowHeight = 0.052f;
     public int maxVisibleRows = 3;
-    public float menuDepth = 0.012f;
-    public float menuRowDepth = 0.006f;
-    public float menuRowForwardOffset = 0.008f;
-    public float menuTextForwardOffset = 0.016f;
+    public float menuDepth = 0.01f;
+    public float menuRowDepth = 0.003f;
+    public float menuRowForwardOffset = 0.02f;
+    public float menuTextForwardOffset = 0.03f;
 
     [Header("Manipulation")]
     public float scaleSensitivity = 1.1f;
@@ -636,8 +636,8 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         menuBorderRenderer.material = new Material(FindIndicatorShader());
         menuBorderRenderer.material.color = menuBorderColor;
 
-        menuTitleText = CreateMenuText("MenuTitle", menuRoot, 0.022f, TextAnchor.MiddleLeft);
-        menuHintText = CreateMenuText("MenuHint", menuRoot, 0.016f, TextAnchor.MiddleLeft);
+        menuTitleText = CreateMenuText("MenuTitle", menuRoot, 0.02f, TextAnchor.MiddleLeft);
+        menuHintText = CreateMenuText("MenuHint", menuRoot, 0.013f, TextAnchor.MiddleLeft);
 
         int totalRows = Mathf.Max(1, maxVisibleRows + 1);
         for (int i = 0; i < totalRows; i++)
@@ -656,7 +656,7 @@ public class GroupSelectionManipulationVR : MonoBehaviour
             row.BackgroundRenderer.receiveShadows = false;
             row.BackgroundRenderer.material = new Material(FindIndicatorShader());
 
-            row.Label = CreateMenuText("Label", row.Root, 0.019f, TextAnchor.MiddleLeft);
+            row.Label = CreateMenuText("Label", row.Root, 0.016f, TextAnchor.MiddleLeft);
             menuRows.Add(row);
         }
     }
@@ -670,7 +670,7 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         textMesh.anchor = anchor;
         textMesh.alignment = TextAlignment.Left;
         textMesh.characterSize = characterSize;
-        textMesh.fontSize = 80;
+        textMesh.fontSize = 64;
         textMesh.color = Color.black;
         textMesh.text = string.Empty;
 
@@ -706,12 +706,15 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         if (Camera.main != null)
         {
             Vector3 lookDirection = Camera.main.transform.position - menuRoot.position;
+            lookDirection = Vector3.ProjectOnPlane(lookDirection, Vector3.up);
             if (lookDirection.sqrMagnitude > 0.0001f)
                 menuRoot.rotation = Quaternion.LookRotation(lookDirection.normalized, Vector3.up);
         }
         else
         {
-            menuRoot.rotation = Quaternion.LookRotation(selectionHand.forward, Vector3.up);
+            Vector3 handForward = Vector3.ProjectOnPlane(selectionHand.forward, Vector3.up);
+            if (handForward.sqrMagnitude > 0.0001f)
+                menuRoot.rotation = Quaternion.LookRotation(handForward.normalized, Vector3.up);
         }
 
         if (menuOpen)
@@ -734,17 +737,17 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         int objectCount = menuObjects.Count;
         int visibleObjectRows = Mathf.Min(objectCount, Mathf.Max(1, maxVisibleRows));
         int visibleRows = visibleObjectRows + 1;
-        float headerHeight = 0.075f;
-        float footerHeight = 0.028f;
+        float headerHeight = 0.09f;
+        float footerHeight = 0.03f;
         float menuHeight = headerHeight + visibleRows * rowHeight + footerHeight;
-        float borderInset = 0.006f;
+        float borderInset = 0.008f;
 
         menuPanel.localScale = new Vector3(menuWidth, menuHeight, menuDepth);
-        menuPanel.localPosition = new Vector3(0f, -menuHeight * 0.5f, 0.002f);
+        menuPanel.localPosition = new Vector3(0f, -menuHeight * 0.5f, 0.008f);
 
         if (menuBorder != null)
         {
-            menuBorder.localScale = new Vector3(menuWidth + borderInset, menuHeight + borderInset, menuDepth * 0.5f);
+            menuBorder.localScale = new Vector3(menuWidth + borderInset, menuHeight + borderInset, menuDepth);
             menuBorder.localPosition = new Vector3(0f, -menuHeight * 0.5f, 0f);
         }
 
@@ -753,12 +756,12 @@ public class GroupSelectionManipulationVR : MonoBehaviour
             scrollStart = Mathf.Clamp(menuIndex - visibleObjectRows + 1, 0, objectCount - visibleObjectRows);
 
         menuTitleText.text = "Group Select";
-        menuTitleText.transform.localPosition = new Vector3(-menuWidth * 0.41f, -0.024f, -menuTextForwardOffset);
+        menuTitleText.transform.localPosition = new Vector3(-menuWidth * 0.42f, -0.03f, -menuTextForwardOffset);
 
         int windowStart = objectCount == 0 ? 0 : scrollStart + 1;
         int windowEnd = Mathf.Min(objectCount, scrollStart + visibleObjectRows);
-        menuHintText.text = selectedObjects.Count + " selected   " + windowStart + "-" + windowEnd + " / " + objectCount;
-        menuHintText.transform.localPosition = new Vector3(-menuWidth * 0.41f, -0.05f, -menuTextForwardOffset);
+        menuHintText.text = selectedObjects.Count + " selected | " + windowStart + "-" + windowEnd + " of " + objectCount;
+        menuHintText.transform.localPosition = new Vector3(-menuWidth * 0.42f, -0.064f, -menuTextForwardOffset);
 
         int rowSlot = 0;
         for (; rowSlot < visibleObjectRows; rowSlot++)
@@ -769,7 +772,7 @@ public class GroupSelectionManipulationVR : MonoBehaviour
             bool isFocused = menuIndex == objectIndex;
             bool isSelected = selectedObjects.Contains(selectable);
 
-            string prefix = isSelected ? "[x] " : "[ ] ";
+            string prefix = isSelected ? "[x]  " : "[ ]  ";
             ConfigureMenuRow(
                 row,
                 rowSlot,
@@ -798,12 +801,12 @@ public class GroupSelectionManipulationVR : MonoBehaviour
     {
         row.Root.gameObject.SetActive(true);
 
-        float y = -0.105f - rowIndex * rowHeight;
+        float y = -0.125f - rowIndex * rowHeight;
         row.Root.localPosition = new Vector3(0f, y, -menuRowForwardOffset);
 
         Transform rowBackground = row.BackgroundRenderer.transform;
         rowBackground.localPosition = Vector3.zero;
-        rowBackground.localScale = new Vector3(menuWidth * 0.9f, rowHeight * 0.68f, menuRowDepth);
+        rowBackground.localScale = new Vector3(menuWidth * 0.9f, rowHeight * 0.74f, menuRowDepth);
 
         Color rowColor = baseColor;
         if (isSelected)
@@ -813,7 +816,7 @@ public class GroupSelectionManipulationVR : MonoBehaviour
 
         row.BackgroundRenderer.material.color = rowColor;
         row.Label.text = label;
-        row.Label.transform.localPosition = new Vector3(-menuWidth * 0.39f, 0f, -menuTextForwardOffset);
+        row.Label.transform.localPosition = new Vector3(-menuWidth * 0.4f, 0f, -menuTextForwardOffset);
     }
 
     private void OnGUI()
