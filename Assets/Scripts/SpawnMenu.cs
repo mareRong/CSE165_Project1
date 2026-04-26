@@ -75,7 +75,7 @@ public class SpawnMenu : MonoBehaviour
             headsetCamera = Camera.main.transform;
 
         if (vrMenuCanvas != null)
-            vrMenuCanvas.SetActive(True);
+            vrMenuCanvas.SetActive(true);
     }
 
     // ===================== MAIN UPDATE LOOP =====================
