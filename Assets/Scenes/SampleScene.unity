@@ -755,7 +755,7 @@ RectTransform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 527381669}
   m_LocalRotation: {x: -0, y: -0, z: -0.014573881, w: 0.99989384}
-  m_LocalPosition: {x: 0, y: 0, z: 2.761}
+  m_LocalPosition: {x: 0, y: 0, z: -0.37}
   m_LocalScale: {x: 0.002, y: 0.002, z: 0.002}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -764,7 +764,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 10, y: 9}
+  m_AnchoredPosition: {x: 9.82, y: 2.73}
   m_SizeDelta: {x: 800, y: 400}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &527381671
@@ -945,6 +945,18 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 1.67
       objectReference: {fileID: 0}
+    - target: {fileID: 1750551342138294735, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
+      propertyPath: vrMenuText
+      value: 
+      objectReference: {fileID: 1009222934}
+    - target: {fileID: 1750551342138294735, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
+      propertyPath: vrMenuCanvas
+      value: 
+      objectReference: {fileID: 527381669}
+    - target: {fileID: 1750551342138294735, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
+      propertyPath: headsetCamera
+      value: 
+      objectReference: {fileID: 674854245}
     - target: {fileID: 5033801203051696737, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
       propertyPath: m_Enabled
       value: 0
@@ -3395,14 +3407,24 @@ MonoBehaviour:
     m_Bits: 4294967295
   selectorDistance: 0.65
   selectorRadius: 1.1
-  indicatorLineWidth: 0.008
+  menuDistance: 0.42
+  menuVerticalOffset: 0.08
+  menuWidth: 0.28
+  rowHeight: 0.06
+  maxVisibleRows: 4
+  menuDepth: 0.004
+  menuRowDepth: 0.002
+  menuRowForwardOffset: 0.015
+  menuTextForwardOffset: 0.026
   scaleSensitivity: 1.1
   duplicateOffset: 0.35
   minObjectScale: 0.1
   maxObjectScale: 4
-  idleColor: {r: 0.3, g: 0.7, b: 1, a: 1}
-  candidateColor: {r: 1, g: 0.82, b: 0.25, a: 1}
   selectedColor: {r: 0.2, g: 1, b: 0.45, a: 1}
+  menuBackgroundColor: {r: 0.1, g: 0.12, b: 0.16, a: 0.95}
+  menuRowColor: {r: 0.94, g: 0.94, b: 0.96, a: 0.95}
+  menuFocusedRowColor: {r: 1, g: 0.82, b: 0.25, a: 1}
+  menuSelectedRowColor: {r: 0.2, g: 1, b: 0.45, a: 1}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
