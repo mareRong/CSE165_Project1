@@ -52,7 +52,7 @@ MonoBehaviour:
     - line: '|   AndroidProfiler: 0'
     - line: '|   AndroidFilterTouchesWhenObscured: 0'
     - line: '|   AndroidEnableSustainedPerformanceMode: 0'
-    - line: '|   defaultScreenOrientation: 4'
+    - line: '|   defaultScreenOrientation: 3'
     - line: '|   targetDevice: 2'
     - line: '|   useOnDemandResources: 0'
     - line: '|   accelerometerFrequency: 60'
@@ -219,7 +219,7 @@ MonoBehaviour:
     - line: '|   AndroidBundleVersionCode: 1'
     - line: '|   AndroidMinSdkVersion: 29'
     - line: '|   AndroidTargetSdkVersion: 32'
-    - line: '|   AndroidPreferredInstallLocation: 1'
+    - line: '|   AndroidPreferredInstallLocation: 0'
     - line: '|   AndroidPreferredDataLocation: 1'
     - line: '|   aotOptions: '
     - line: '|   stripEngineCode: 1'
@@ -944,7 +944,7 @@ MonoBehaviour:
         m_BuildSubtarget: 0
         m_BuildSystem: 1
         m_ExportAsGoogleAndroidProject: 0
-        m_DebugSymbolLevel: 1
+        m_DebugSymbolLevel: 4
         m_DebugSymbolFormat: 5
         m_CurrentDeploymentTargetId: __builtin__target_default
         m_BuildType: 2
