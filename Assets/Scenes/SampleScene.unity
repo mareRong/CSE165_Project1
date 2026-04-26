@@ -765,7 +765,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 9.82, y: 2.73}
-  m_SizeDelta: {x: 800, y: 400}
+  m_SizeDelta: {x: 800, y: 600}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &527381671
 MonoBehaviour:
@@ -821,7 +821,7 @@ Canvas:
   m_PlaneDistance: 100
   m_PixelPerfect: 0
   m_ReceivesEvents: 1
-  m_OverrideSorting: 0
+  m_OverrideSorting: 1
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
   m_VertexColorAlwaysGammaSpace: 0
@@ -946,6 +946,10 @@ PrefabInstance:
       value: 1.67
       objectReference: {fileID: 0}
     - target: {fileID: 1750551342138294735, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
+      propertyPath: rayOrigin
+      value: 
+      objectReference: {fileID: 1126014934}
+    - target: {fileID: 1750551342138294735, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
       propertyPath: vrMenuText
       value: 
       objectReference: {fileID: 1009222934}
@@ -969,7 +973,8 @@ PrefabInstance:
       propertyPath: m_TrackedHandModeStarted.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
       value: 2
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 1750551342138294735, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
     m_RemovedGameObjects:
     - {fileID: 5167925059111895691, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
     m_AddedGameObjects:
@@ -983,6 +988,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1717954561962503725, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
       insertIndex: -1
       addedObject: {fileID: 674854247}
+    - targetCorrespondingSourceObject: {fileID: 1717954561962503725, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 674854248}
     - targetCorrespondingSourceObject: {fileID: 1670256624, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
       insertIndex: -1
       addedObject: {fileID: 674854243}
@@ -1065,6 +1073,38 @@ MonoBehaviour:
   deadZone: 0.2
   rotateAroundHead: 1
   applyGravityWithCharacterController: 1
+--- !u!114 &674854248
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 674854244}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b06804973600744d29e5b49131bc8c4c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SpawnMenu
+  spawnModeEnabled: 1
+  spawnPrefabs:
+  - {fileID: 3636958033759261081, guid: 5298a9fa39bbd4ac2a0700f6e8a6cf1f, type: 3}
+  - {fileID: 5612014854748817282, guid: 140c777bba7b046b3be06af1d9abe80c, type: 3}
+  - {fileID: 5995678353580508471, guid: 45bb24cd9e1c0474b883374efc633503, type: 3}
+  - {fileID: 9149357831951368021, guid: 754f62b191b46480fb52ac74fa330ec2, type: 3}
+  - {fileID: 7485976883828519068, guid: 4f12a11f161d247ca9aaea93b070ea4b, type: 3}
+  rayOrigin: {fileID: 1126014934}
+  maxRayDistance: 20
+  placementMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  vrMenuCanvas: {fileID: 527381669}
+  vrMenuText: {fileID: 1009222934}
+  headsetCamera: {fileID: 674854245}
+  menuDistance: 2
+  menuOffset: {x: 0, y: -0.15, z: 0}
+  multiSpawnSpacing: 1.2
+  spawnHeightOffset: 0.2
+  maxSpawnRange: 5
 --- !u!1001 &693114214
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1791,8 +1831,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 36
-  m_fontSizeBase: 36
+  m_fontSize: 12
+  m_fontSizeBase: 12
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -1847,6 +1887,11 @@ CanvasRenderer:
 --- !u!4 &1089964811 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1680501587, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
+  m_PrefabInstance: {fileID: 674854240}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &1126014934 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1670256625, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
   m_PrefabInstance: {fileID: 674854240}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1209710388
