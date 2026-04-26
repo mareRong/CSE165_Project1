@@ -40,6 +40,10 @@ public class GroupSelectionManipulationVR : MonoBehaviour
     public float menuWidth = 0.28f;
     public float rowHeight = 0.06f;
     public int maxVisibleRows = 4;
+    public float menuDepth = 0.004f;
+    public float menuRowDepth = 0.002f;
+    public float menuRowForwardOffset = 0.015f;
+    public float menuTextForwardOffset = 0.026f;
 
     [Header("Manipulation")]
     public float scaleSensitivity = 1.1f;
@@ -691,14 +695,14 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         int visibleRows = visibleObjectRows + 1;
         float menuHeight = 0.09f + visibleRows * rowHeight;
 
-        menuPanel.localScale = new Vector3(menuWidth, menuHeight, 0.01f);
+        menuPanel.localScale = new Vector3(menuWidth, menuHeight, menuDepth);
         menuPanel.localPosition = new Vector3(0f, -menuHeight * 0.5f, 0f);
 
         menuTitleText.text = "Selection Menu";
-        menuTitleText.transform.localPosition = new Vector3(-menuWidth * 0.44f, -0.035f, -0.008f);
+        menuTitleText.transform.localPosition = new Vector3(-menuWidth * 0.44f, -0.035f, -menuTextForwardOffset);
 
         menuHintText.text = "Grip: scroll   Trigger: toggle / confirm";
-        menuHintText.transform.localPosition = new Vector3(-menuWidth * 0.44f, -0.075f, -0.008f);
+        menuHintText.transform.localPosition = new Vector3(-menuWidth * 0.44f, -0.075f, -menuTextForwardOffset);
 
         int scrollStart = 0;
         if (objectCount > visibleObjectRows)
@@ -743,11 +747,11 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         row.Root.gameObject.SetActive(true);
 
         float y = -0.12f - rowIndex * rowHeight;
-        row.Root.localPosition = new Vector3(0f, y, -0.006f);
+        row.Root.localPosition = new Vector3(0f, y, -menuRowForwardOffset);
 
         Transform rowBackground = row.BackgroundRenderer.transform;
         rowBackground.localPosition = Vector3.zero;
-        rowBackground.localScale = new Vector3(menuWidth * 0.88f, rowHeight * 0.72f, 0.008f);
+        rowBackground.localScale = new Vector3(menuWidth * 0.88f, rowHeight * 0.72f, menuRowDepth);
 
         Color rowColor = baseColor;
         if (isSelected)
@@ -757,7 +761,7 @@ public class GroupSelectionManipulationVR : MonoBehaviour
 
         row.BackgroundRenderer.material.color = rowColor;
         row.Label.text = label;
-        row.Label.transform.localPosition = new Vector3(-menuWidth * 0.4f, 0f, -0.006f);
+        row.Label.transform.localPosition = new Vector3(-menuWidth * 0.4f, 0f, -menuTextForwardOffset);
     }
 
     private void OnGUI()
