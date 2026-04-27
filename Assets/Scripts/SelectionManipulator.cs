@@ -1,29 +1,29 @@
 using UnityEngine;
 using UnityEngine.XR;
+using TMPro;
 
-// Handles selection mode, ray indicator, hover highlight,
-// object selection, and move/rotate/scale manipulation.
 public class SelectionManipulator : MonoBehaviour
 {
-    public bool IsSelectionModeActive => selectionMode;
+    public bool IsSelectionModeActive => selectionMode || manipulationMode;
+
     public SpawnMenu spawnMenu;
-    public GroupSelectionManipulationVR groupSelectionMenu;
 
-    private const string DefaultLineShaderName = "Sprites/Default";
-    private const string PreferredIndicatorShaderName = "Universal Render Pipeline/Unlit";
-
-    // ===================== RAY SETTINGS =====================
     [Header("Ray Settings")]
     public Transform rayOrigin;
     public float maxRayDistance = 20f;
     public LayerMask selectableMask = ~0;
 
-    // ===================== INDICATOR SETTINGS =====================
     [Header("Indicator")]
     public LineRenderer lineRenderer;
     public Transform hitPointVisual;
 
-    // ===================== MANIPULATION SETTINGS =====================
+    [Header("VR Menu Canvas")]
+    public GameObject vrMenuCanvas;
+    public TextMeshProUGUI vrMenuText;
+    public Transform headsetCamera;
+    public float menuDistance = 2f;
+    public Vector3 menuOffset = new Vector3(0f, -0.15f, 0f);
+
     [Header("Manipulation Settings")]
     public float moveHeightOffset = 0.7f;
     public float defaultMoveDistance = 3f;
@@ -31,12 +31,10 @@ public class SelectionManipulator : MonoBehaviour
     public float minScale = 0.2f;
     public float maxScale = 3f;
 
-    // ===================== HIGHLIGHT SETTINGS =====================
     [Header("Highlight")]
     public Color hoverColor = Color.cyan;
     public Color selectedColor = Color.yellow;
 
-    // ===================== INPUT DEVICES =====================
     private InputDevice leftDevice;
     private InputDevice rightDevice;
 
@@ -44,8 +42,9 @@ public class SelectionManipulator : MonoBehaviour
     private bool prevRightGrip;
     private bool prevLeftTrigger;
 
-    // ===================== SELECTION STATE =====================
     private bool selectionMode = false;
+    private bool manipulationMode = false;
+    private bool wasManipulating = false;
 
     private GameObject hoveredObject;
     private Renderer[] hoveredRenderers;
@@ -54,7 +53,6 @@ public class SelectionManipulator : MonoBehaviour
     private Renderer[] selectedRenderers;
     private MaterialPropertyBlock[] selectedOriginalBlocks;
 
-    // ===================== MANIPULATION MODE =====================
     private enum ManipulationMode
     {
         Move,
@@ -64,7 +62,6 @@ public class SelectionManipulator : MonoBehaviour
 
     private ManipulationMode currentMode = ManipulationMode.Move;
 
-    // ===================== INITIALIZATION =====================
     void Start()
     {
         RefreshDevices();
@@ -72,22 +69,19 @@ public class SelectionManipulator : MonoBehaviour
         if (spawnMenu == null)
             spawnMenu = FindObjectOfType<SpawnMenu>(true);
 
-        if (groupSelectionMenu == null)
-            groupSelectionMenu = FindObjectOfType<GroupSelectionManipulationVR>(true);
-
         if (rayOrigin == null)
             rayOrigin = transform;
 
+        if (headsetCamera == null && Camera.main != null)
+            headsetCamera = Camera.main.transform;
+
         EnsureIndicatorReferences();
+        HideIndicator();
 
-        if (lineRenderer != null)
-            lineRenderer.enabled = false;
-
-        if (hitPointVisual != null)
-            hitPointVisual.gameObject.SetActive(false);
+        if (vrMenuCanvas != null)
+            vrMenuCanvas.SetActive(true);
     }
 
-    // ===================== MAIN UPDATE LOOP =====================
     void Update()
     {
         if (!leftDevice.isValid || !rightDevice.isValid)
@@ -96,81 +90,183 @@ public class SelectionManipulator : MonoBehaviour
         ReadButtons(
             out bool rightTriggerDown,
             out bool rightTriggerHeld,
+            out bool rightTriggerReleased,
             out bool rightGripDown,
             out bool leftTriggerDown
         );
 
-        bool otherModeActive =
-            (spawnMenu != null && spawnMenu.IsSpawnModeActive) ||
-            (groupSelectionMenu != null && groupSelectionMenu.IsGroupModeActive);
-
-        if (!selectionMode && otherModeActive)
+        if (!IsSelectionModeActive && spawnMenu != null && spawnMenu.IsSpawnModeActive)
+        {
+            UpdateVRMenu();
             return;
+        }
 
-        // Idle state: Right Grip enters selection mode
-        if (!selectionMode)
+        if (!selectionMode && !manipulationMode)
         {
             if (rightGripDown)
-            {
-                selectionMode = true;
-                currentMode = ManipulationMode.Move;
+                StartSelectionMode();
 
-                if (lineRenderer != null)
-                    lineRenderer.enabled = true;
-
-                Debug.Log("Selection Mode Started");
-            }
-
+            UpdateVRMenu();
             return;
         }
 
-        // Selection mode indicator and hover highlight
-        UpdateIndicator();
-        UpdateHoverHighlight();
-
-        // Left Trigger exits selection mode
         if (leftTriggerDown)
         {
-            if (selectedObject != null)
-                DeselectObject();
-
-            ClearHoverHighlight();
-
-            selectionMode = false;
-
-            if (lineRenderer != null)
-                lineRenderer.enabled = false;
-
-            if (hitPointVisual != null)
-                hitPointVisual.gameObject.SetActive(false);
-
-            Debug.Log("Selection Mode Ended");
+            ExitRaySelection();
+            UpdateVRMenu();
             return;
         }
 
-        // Right Trigger selects the hovered object if nothing is selected
-        if (rightTriggerDown && selectedObject == null)
+        if (selectionMode && !manipulationMode)
         {
-            if (hoveredObject != null)
+            UpdateIndicator();
+            UpdateHoverHighlight();
+
+            if (rightTriggerDown && hoveredObject != null)
+            {
                 SelectObject(hoveredObject);
+                StartManipulationMode();
+            }
 
+            UpdateVRMenu();
             return;
         }
 
-        // Right Grip cycles manipulation mode after an object is selected
-        if (rightGripDown && selectedObject != null)
+        if (manipulationMode && selectedObject != null)
         {
-            CycleManipulationMode();
-        }
+            UpdateIndicator();
 
-        // Hold Right Trigger to manipulate selected object
-        if (rightTriggerHeld && selectedObject != null)
-        {
-            ManipulateSelectedObject();
+            if (rightGripDown)
+            {
+                CycleManipulationMode();
+                UpdateVRMenu();
+                return;
+            }
+
+            // Move happens once per trigger press
+            if (rightTriggerDown && currentMode == ManipulationMode.Move)
+            {
+                ManipulateSelectedObject();
+                wasManipulating = true;
+            }
+
+            // Rotate and scale happen while holding trigger
+            if (rightTriggerHeld && currentMode != ManipulationMode.Move)
+            {
+                ManipulateSelectedObject();
+                wasManipulating = true;
+            }
+
+            if (rightTriggerReleased && wasManipulating)
+            {
+                FinishManipulation();
+                UpdateVRMenu();
+                return;
+            }
+
+            UpdateVRMenu();
         }
     }
 
-    // ===================== INDICATOR =====================
+    private void StartSelectionMode()
+    {
+        selectionMode = true;
+        manipulationMode = false;
+        wasManipulating = false;
+        currentMode = ManipulationMode.Move;
+        ShowIndicator();
+    }
+
+    private void StartManipulationMode()
+    {
+        if (selectedObject == null)
+            return;
+
+        selectionMode = false;
+        manipulationMode = true;
+        wasManipulating = false;
+        currentMode = ManipulationMode.Move;
+
+        ClearHoverHighlight();
+        ShowIndicator();
+    }
+
+    private void FinishManipulation()
+    {
+        DeselectObject();
+
+        selectionMode = false;
+        manipulationMode = false;
+        wasManipulating = false;
+
+        ClearHoverHighlight();
+        HideIndicator();
+    }
+
+    private void ExitRaySelection()
+    {
+        if (selectedObject != null)
+            DeselectObject();
+
+        ClearHoverHighlight();
+
+        selectionMode = false;
+        manipulationMode = false;
+        wasManipulating = false;
+
+        HideIndicator();
+    }
+
+    private void UpdateVRMenu()
+    {
+        if (vrMenuCanvas == null || vrMenuText == null)
+            return;
+
+        vrMenuCanvas.SetActive(true);
+
+        if (headsetCamera != null)
+        {
+            vrMenuCanvas.transform.position =
+                headsetCamera.position +
+                headsetCamera.forward * menuDistance +
+                menuOffset;
+
+            vrMenuCanvas.transform.rotation =
+                Quaternion.LookRotation(vrMenuCanvas.transform.position - headsetCamera.position);
+        }
+
+        string hoverName = hoveredObject == null ? "None" : hoveredObject.name;
+        string selectedName = selectedObject == null ? "None" : selectedObject.name;
+
+        if (selectionMode)
+        {
+            vrMenuText.text =
+                "Ray Selection Mode\n\n" +
+                "Hovering: " + hoverName + "\n\n" +
+                "Right Trigger = Select Object\n" +
+                "Left Trigger = Cancel / Exit";
+        }
+        else if (manipulationMode)
+        {
+            vrMenuText.text =
+                "Manipulation Mode\n\n" +
+                "Selected: " + selectedName + "\n" +
+                "Current Mode: " + currentMode + "\n\n" +
+                "Move Mode: Press Right Trigger Once\n" +
+                "Rotate/Scale: Hold Right Trigger\n" +
+                "Right Grip = Switch Move / Rotate / Scale\n" +
+                "Left Trigger = Cancel / Exit";
+        }
+        else
+        {
+            vrMenuText.text =
+                "Controls\n\n" +
+                "Left Trigger = Spawn\n" +
+                "Left Grip = Group Selection\n" +
+                "Right Grip = Ray Selection";
+        }
+    }
+
     private void EnsureIndicatorReferences()
     {
         if (lineRenderer == null)
@@ -188,20 +284,17 @@ public class SelectionManipulator : MonoBehaviour
         LineRenderer createdLine = lineObject.AddComponent<LineRenderer>();
         createdLine.useWorldSpace = true;
         createdLine.positionCount = 2;
-        createdLine.loop = false;
-        createdLine.alignment = LineAlignment.View;
         createdLine.widthMultiplier = 0.01f;
         createdLine.numCapVertices = 4;
         createdLine.numCornerVertices = 4;
         createdLine.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         createdLine.receiveShadows = false;
-        createdLine.textureMode = LineTextureMode.Stretch;
         createdLine.startColor = hoverColor;
         createdLine.endColor = hoverColor;
 
-        Shader lineShader = Shader.Find(DefaultLineShaderName);
-        if (lineShader != null)
-            createdLine.sharedMaterial = new Material(lineShader);
+        Shader shader = Shader.Find("Sprites/Default");
+        if (shader != null)
+            createdLine.sharedMaterial = new Material(shader);
 
         return createdLine;
     }
@@ -213,25 +306,37 @@ public class SelectionManipulator : MonoBehaviour
         marker.transform.SetParent(transform, false);
         marker.transform.localScale = Vector3.one * 0.06f;
 
-        Collider markerCollider = marker.GetComponent<Collider>();
-        if (markerCollider != null)
-            Destroy(markerCollider);
+        Collider col = marker.GetComponent<Collider>();
+        if (col != null)
+            Destroy(col);
 
-        Renderer markerRenderer = marker.GetComponent<Renderer>();
-        markerRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-        markerRenderer.receiveShadows = false;
+        Renderer rend = marker.GetComponent<Renderer>();
+        if (rend != null)
+        {
+            rend.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            rend.receiveShadows = false;
+            rend.material.color = hoverColor;
+        }
 
-        Shader shader = Shader.Find(PreferredIndicatorShaderName);
-        if (shader == null)
-            shader = Shader.Find("Universal Render Pipeline/Lit");
-        if (shader == null)
-            shader = Shader.Find("Standard");
-
-        if (shader != null)
-            markerRenderer.material = new Material(shader);
-
-        markerRenderer.material.color = hoverColor;
         return marker.transform;
+    }
+
+    private void ShowIndicator()
+    {
+        if (lineRenderer != null)
+            lineRenderer.enabled = true;
+
+        if (hitPointVisual != null)
+            hitPointVisual.gameObject.SetActive(false);
+    }
+
+    private void HideIndicator()
+    {
+        if (lineRenderer != null)
+            lineRenderer.enabled = false;
+
+        if (hitPointVisual != null)
+            hitPointVisual.gameObject.SetActive(false);
     }
 
     private void UpdateIndicator()
@@ -264,7 +369,6 @@ public class SelectionManipulator : MonoBehaviour
         lineRenderer.SetPosition(1, endPoint);
     }
 
-    // ===================== HOVER HIGHLIGHT =====================
     private void UpdateHoverHighlight()
     {
         if (rayOrigin == null)
@@ -274,9 +378,7 @@ public class SelectionManipulator : MonoBehaviour
         GameObject newHover = null;
 
         if (Physics.Raycast(ray, out RaycastHit hit, maxRayDistance, selectableMask))
-        {
             newHover = GetMainSelectableObject(hit.collider);
-        }
 
         if (hoveredObject == newHover)
             return;
@@ -307,7 +409,6 @@ public class SelectionManipulator : MonoBehaviour
         hoveredRenderers = null;
     }
 
-    // ===================== SELECTION =====================
     private GameObject GetMainSelectableObject(Collider col)
     {
         SelectableObject selectable = col.GetComponentInParent<SelectableObject>();
@@ -322,6 +423,9 @@ public class SelectionManipulator : MonoBehaviour
 
     private void SelectObject(GameObject obj)
     {
+        if (selectedObject != null)
+            DeselectObject();
+
         selectedObject = obj;
         selectedRenderers = selectedObject.GetComponentsInChildren<Renderer>();
 
@@ -329,10 +433,6 @@ public class SelectionManipulator : MonoBehaviour
 
         ClearHoverHighlight();
         SetRendererColor(selectedRenderers, selectedColor);
-
-        currentMode = ManipulationMode.Move;
-
-        Debug.Log("Selected: " + selectedObject.name);
     }
 
     private void DeselectObject()
@@ -342,11 +442,8 @@ public class SelectionManipulator : MonoBehaviour
         selectedObject = null;
         selectedRenderers = null;
         selectedOriginalBlocks = null;
-
-        Debug.Log("Deselected");
     }
 
-    // ===================== HIGHLIGHT HELPERS =====================
     private void SaveSelectedOriginalBlocks()
     {
         if (selectedRenderers == null)
@@ -393,8 +490,6 @@ public class SelectionManipulator : MonoBehaviour
             MaterialPropertyBlock block = new MaterialPropertyBlock();
             rend.GetPropertyBlock(block);
 
-            // _Color works for Standard shader.
-            // _BaseColor works for URP Lit shader.
             block.SetColor("_Color", color);
             block.SetColor("_BaseColor", color);
 
@@ -402,20 +497,19 @@ public class SelectionManipulator : MonoBehaviour
         }
     }
 
-    // ===================== MODE SWITCHING =====================
     private void CycleManipulationMode()
     {
+        // Stop current manipulation when switching modes
+        wasManipulating = false;
+
         if (currentMode == ManipulationMode.Move)
             currentMode = ManipulationMode.Rotate;
         else if (currentMode == ManipulationMode.Rotate)
             currentMode = ManipulationMode.Scale;
         else
             currentMode = ManipulationMode.Move;
-
-        Debug.Log("Manipulation Mode: " + currentMode);
     }
 
-    // ===================== MANIPULATION =====================
     private void ManipulateSelectedObject()
     {
         if (currentMode == ManipulationMode.Move)
@@ -432,16 +526,18 @@ public class SelectionManipulator : MonoBehaviour
             return;
 
         Ray ray = new Ray(rayOrigin.position, rayOrigin.forward);
+        Vector3 targetPosition;
 
         if (Physics.Raycast(ray, out RaycastHit hit, maxRayDistance))
         {
-            selectedObject.transform.position = hit.point + Vector3.up * moveHeightOffset;
+            targetPosition = hit.point;
         }
         else
         {
-            selectedObject.transform.position =
-                rayOrigin.position + rayOrigin.forward * defaultMoveDistance;
+            targetPosition = rayOrigin.position + rayOrigin.forward * defaultMoveDistance;
         }
+
+        selectedObject.transform.position = targetPosition + Vector3.up * moveHeightOffset;
     }
 
     private void RotateObject()
@@ -467,16 +563,10 @@ public class SelectionManipulator : MonoBehaviour
 
         Vector3 currentScale = selectedObject.transform.localScale;
 
-        // Point controller upward to scale up
         if (rayOrigin.forward.y > 0.15f)
-        {
             currentScale += Vector3.one * scaleSpeed * Time.deltaTime;
-        }
-        // Point controller downward to scale down
         else if (rayOrigin.forward.y < -0.15f)
-        {
             currentScale -= Vector3.one * scaleSpeed * Time.deltaTime;
-        }
 
         currentScale.x = Mathf.Clamp(currentScale.x, minScale, maxScale);
         currentScale.y = Mathf.Clamp(currentScale.y, minScale, maxScale);
@@ -485,7 +575,6 @@ public class SelectionManipulator : MonoBehaviour
         selectedObject.transform.localScale = currentScale;
     }
 
-    // ===================== INPUT =====================
     private void RefreshDevices()
     {
         leftDevice = InputDevices.GetDeviceAtXRNode(XRNode.LeftHand);
@@ -495,6 +584,7 @@ public class SelectionManipulator : MonoBehaviour
     private void ReadButtons(
         out bool rightTriggerDown,
         out bool rightTriggerHeld,
+        out bool rightTriggerReleased,
         out bool rightGripDown,
         out bool leftTriggerDown
     )
@@ -516,30 +606,13 @@ public class SelectionManipulator : MonoBehaviour
 
         rightTriggerDown = rightTrigger && !prevRightTrigger;
         rightTriggerHeld = rightTrigger;
+        rightTriggerReleased = !rightTrigger && prevRightTrigger;
+
         rightGripDown = rightGrip && !prevRightGrip;
         leftTriggerDown = leftTrigger && !prevLeftTrigger;
 
         prevRightTrigger = rightTrigger;
         prevRightGrip = rightGrip;
         prevLeftTrigger = leftTrigger;
-    }
-
-    // ===================== DEBUG GUI =====================
-    void OnGUI()
-    {
-        if (!selectionMode)
-            return;
-
-        string selectedName = selectedObject == null ? "None" : selectedObject.name;
-
-        GUI.Box(
-            new Rect(20, 20, 320, 130),
-            "Selection Mode\n\n" +
-            "Selected: " + selectedName + "\n" +
-            "Mode: " + currentMode + "\n\n" +
-            "Right Trigger = Select / Manipulate\n" +
-            "Right Grip = Change Mode\n" +
-            "Left Trigger = Exit"
-        );
     }
 }
