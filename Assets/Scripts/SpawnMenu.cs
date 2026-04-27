@@ -12,18 +12,15 @@ public class SpawnMenu : MonoBehaviour
     public GroupSelectionManipulationVR groupSelectionMenu;
     public SelectionManipulator singleSelectionMenu;
 
-    // ===================== MENU SETTINGS =====================
     [Header("Menu")]
     public bool spawnModeEnabled = true;
     public GameObject[] spawnPrefabs;
 
-    // ===================== RAYCAST SETTINGS =====================
     [Header("Ray")]
     public Transform rayOrigin;
     public float maxRayDistance = 20f;
     public LayerMask placementMask = ~0;
 
-    // ===================== VR MENU DISPLAY =====================
     [Header("VR Menu Canvas")]
     public GameObject vrMenuCanvas;
     public TextMeshProUGUI vrMenuText;
@@ -31,11 +28,9 @@ public class SpawnMenu : MonoBehaviour
     public float menuDistance = 2f;
     public Vector3 menuOffset = new Vector3(0f, -0.15f, 0f);
 
-    // ===================== MULTI SPAWN SETTINGS =====================
     [Header("Multi Spawn")]
     public float multiSpawnSpacing = 1.0f;
 
-    // ===================== INPUT DEVICES =====================
     private InputDevice leftDevice;
     private InputDevice rightDevice;
 
@@ -46,14 +41,12 @@ public class SpawnMenu : MonoBehaviour
 
     private bool rightTriggerHeld;
 
-    // ===================== MENU STATE =====================
     private int selectedIndex = 0;
 
     private bool menuOpen = false;
     private bool placementMode = false;
     private bool orientationMode = false;
 
-    // ===================== SPAWN OBJECTS =====================
     private GameObject selectedPrefab;
     private GameObject previewObject;
 
@@ -61,14 +54,12 @@ public class SpawnMenu : MonoBehaviour
 
     private float currentYRotation = 0f;
 
-    // ===================== PLACEMENT SETTINGS =====================
     [Header("Placement Offset")]
     public float spawnHeightOffset = 0.7f;
 
     [Header("Spawn Constraints")]
     public float maxSpawnRange = 5f;
 
-    // ===================== INITIALIZATION =====================
     void Start()
     {
         RefreshDevices();
@@ -89,7 +80,6 @@ public class SpawnMenu : MonoBehaviour
             vrMenuCanvas.SetActive(true);
     }
 
-    // ===================== MAIN UPDATE LOOP =====================
     void Update()
     {
         if (!leftDevice.isValid || !rightDevice.isValid)
@@ -150,18 +140,24 @@ public class SpawnMenu : MonoBehaviour
         UpdateVRMenu();
     }
 
-    // ===================== MENU MODE =====================
     private void HandleMenuMode(bool leftTriggerDown, bool rightTriggerDown, bool leftGripDown, bool rightGripDown)
     {
+        // Cancel out of spawn menu completely
         if (leftTriggerDown)
-            selectedIndex = (selectedIndex - 1 + spawnPrefabs.Length) % spawnPrefabs.Length;
+        {
+            ExitSpawnMode();
+            return;
+        }
 
+        // Change prefab
         if (rightTriggerDown)
             selectedIndex = (selectedIndex + 1) % spawnPrefabs.Length;
 
+        // Add or remove from multi-select
         if (rightGripDown)
             ToggleMultiSelect(spawnPrefabs[selectedIndex]);
 
+        // Start placement
         if (leftGripDown)
         {
             if (multiSelectedPrefabs.Count > 0)
@@ -171,28 +167,35 @@ public class SpawnMenu : MonoBehaviour
         }
     }
 
-    // ===================== PLACEMENT MODE =====================
     private void HandlePlacementMode(bool leftTriggerDown, bool rightTriggerDown)
     {
         UpdatePreviewPosition();
 
+        // Cancel out of placement mode completely
+        if (leftTriggerDown)
+        {
+            ExitSpawnMode();
+            return;
+        }
+
+        // Go to orientation mode
         if (rightTriggerDown)
         {
             placementMode = false;
             orientationMode = true;
             currentYRotation = GetControllerYaw();
         }
-
-        if (leftTriggerDown)
-        {
-            CancelPreview();
-            menuOpen = true;
-        }
     }
 
-    // ===================== ORIENTATION MODE =====================
     private void HandleOrientationMode(bool leftTriggerDown, bool rightGripDown)
     {
+        // Cancel out of orientation mode completely
+        if (leftTriggerDown)
+        {
+            ExitSpawnMode();
+            return;
+        }
+
         if (rightTriggerHeld)
         {
             currentYRotation = GetControllerYaw();
@@ -201,17 +204,11 @@ public class SpawnMenu : MonoBehaviour
                 previewObject.transform.rotation = Quaternion.Euler(0f, currentYRotation, 0f);
         }
 
+        // Confirm spawn
         if (rightGripDown)
             ConfirmSpawn();
-
-        if (leftTriggerDown)
-        {
-            orientationMode = false;
-            placementMode = true;
-        }
     }
 
-    // ===================== SINGLE OBJECT SPAWN =====================
     private void StartSinglePlacement(GameObject prefab)
     {
         selectedPrefab = prefab;
@@ -226,7 +223,6 @@ public class SpawnMenu : MonoBehaviour
         placementMode = true;
     }
 
-    // ===================== MULTI OBJECT SPAWN =====================
     private void StartMultiPlacement()
     {
         if (previewObject != null)
@@ -249,7 +245,6 @@ public class SpawnMenu : MonoBehaviour
         placementMode = true;
     }
 
-    // ===================== PREVIEW POSITION =====================
     private void UpdatePreviewPosition()
     {
         if (previewObject == null || rayOrigin == null)
@@ -280,7 +275,6 @@ public class SpawnMenu : MonoBehaviour
         previewObject.transform.rotation = Quaternion.Euler(0f, currentYRotation, 0f);
     }
 
-    // ===================== CONFIRM SPAWN =====================
     private void ConfirmSpawn()
     {
         if (previewObject == null)
@@ -309,70 +303,79 @@ public class SpawnMenu : MonoBehaviour
         menuOpen = false;
     }
 
-   // ===================== VR MENU =====================
-private void UpdateVRMenu()
-{
-    if (vrMenuCanvas == null || vrMenuText == null)
-        return;
-
-    // Always show the VR menu, even when no mode is active
-    vrMenuCanvas.SetActive(true);
-
-    bool spawnModeActive = menuOpen || placementMode || orientationMode;
-    bool groupModeActive = groupSelectionMenu != null && groupSelectionMenu.IsGroupModeActive;
-    bool singleModeActive = singleSelectionMenu != null && singleSelectionMenu.IsSelectionModeActive;
-
-    if (!spawnModeActive && (groupModeActive || singleModeActive))
-        return;
-
-    // Keep the menu floating in front of the headset camera
-    if (headsetCamera != null)
+    private void UpdateVRMenu()
     {
-        vrMenuCanvas.transform.position =
-            headsetCamera.position +
-            headsetCamera.forward * menuDistance +
-            menuOffset;
+        if (vrMenuCanvas == null || vrMenuText == null)
+            return;
 
-        vrMenuCanvas.transform.rotation =
-            Quaternion.LookRotation(vrMenuCanvas.transform.position - headsetCamera.position);
+        vrMenuCanvas.SetActive(true);
+
+        bool spawnModeActive = menuOpen || placementMode || orientationMode;
+        bool groupModeActive = groupSelectionMenu != null && groupSelectionMenu.IsGroupModeActive;
+        bool singleModeActive = singleSelectionMenu != null && singleSelectionMenu.IsSelectionModeActive;
+
+        if (!spawnModeActive && (groupModeActive || singleModeActive))
+            return;
+
+        if (headsetCamera != null)
+        {
+            vrMenuCanvas.transform.position =
+                headsetCamera.position +
+                headsetCamera.forward * menuDistance +
+                menuOffset;
+
+            vrMenuCanvas.transform.rotation =
+                Quaternion.LookRotation(vrMenuCanvas.transform.position - headsetCamera.position);
+        }
+
+        if (menuOpen)
+        {
+            vrMenuText.text =
+                "Spawn Menu\n\n" +
+                BuildMenuText() + "\n" +
+                "Right Trigger = Change Prefab\n" +
+                "Right Grip = Add/Remove Multi-Select\n" +
+                "Left Grip = Start Placement\n" +
+                "Left Trigger = Cancel / Exit";
+        }
+        else if (placementMode)
+        {
+            vrMenuText.text =
+                "Placement Mode\n\n" +
+                "Preview follows raycast hit point\n" +
+                "Right Trigger = Orientation\n" +
+                "Left Trigger = Cancel / Exit";
+        }
+        else if (orientationMode)
+        {
+            vrMenuText.text =
+                "Orientation Mode\n\n" +
+                "Hold Right Trigger = Rotate\n" +
+                "Right Grip = Confirm Spawn\n" +
+                "Left Trigger = Cancel / Exit";
+        }
+        else
+        {
+            vrMenuText.text =
+                "Controls\n\n" +
+                "Left Trigger = Spawn\n" +
+                "Left Grip = Group Selection\n" +
+                "Right Grip = Single Selection";
+        }
     }
 
-    if (menuOpen)
+    private void ExitSpawnMode()
     {
-        vrMenuText.text =
-            "Spawn Menu\n\n" +
-            BuildMenuText() + "\n" +
-            "Left/Right Trigger = Change Prefab\n" +
-            "Right Grip = Add/Remove Multi-Select\n" +
-            "Left Grip = Start Placement";
-    }
-    else if (placementMode)
-    {
-        vrMenuText.text =
-            "Placement Mode\n\n" +
-            "Preview follows raycast hit point\n" +
-            "Right Trigger = Orientation\n" +
-            "Left Trigger = Cancel";
-    }
-    else if (orientationMode)
-    {
-        vrMenuText.text =
-            "Orientation Mode\n\n" +
-            "Hold Right Trigger = Rotate\n" +
-            "Right Grip = Confirm Spawn\n" +
-            "Left Trigger = Back";
-    }
-    else
-    {
-        vrMenuText.text =
-            "Controls\n\n" +
-            "Left Trigger = Spawn\n" +
-            "Left Grip = Group Selection\n" +
-            "Right Grip = Single Selection";
-    }
-}
+        CancelPreview();
 
-    // ===================== HELPERS =====================
+        menuOpen = false;
+        placementMode = false;
+        orientationMode = false;
+
+        multiSelectedPrefabs.Clear();
+        selectedPrefab = null;
+    }
+
     private void ToggleMultiSelect(GameObject prefab)
     {
         if (multiSelectedPrefabs.Contains(prefab))
@@ -453,7 +456,6 @@ private void UpdateVRMenu()
             vrMenuCanvas.SetActive(false);
     }
 
-    // ===================== INPUT =====================
     private void RefreshDevices()
     {
         leftDevice = InputDevices.GetDeviceAtXRNode(XRNode.LeftHand);
@@ -497,7 +499,6 @@ private void UpdateVRMenu()
         prevRightGrip = rightGrip;
     }
 
-    // ===================== BUILD MENU TEXT =====================
     private string BuildMenuText()
     {
         StringBuilder builder = new StringBuilder();
