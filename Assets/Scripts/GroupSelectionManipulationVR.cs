@@ -55,12 +55,15 @@ public class GroupSelectionManipulationVR : MonoBehaviour
     private readonly Dictionary<Rigidbody, RigidbodyState> rigidbodyStates = new Dictionary<Rigidbody, RigidbodyState>();
 
     private InputDevice leftDevice;
-    private bool prevTriggerPressed;
-    private bool prevGripPressed;
-    private bool triggerPressed;
-    private bool gripPressed;
-    private Vector2 thumbstickAxis;
-    private bool thumbstickScrollReady = true;
+    private InputDevice rightDevice;
+    private bool prevLeftTriggerPressed;
+    private bool prevRightTriggerPressed;
+    private bool prevLeftGripPressed;
+    private bool prevRightGripPressed;
+    private bool leftTriggerPressed;
+    private bool rightTriggerPressed;
+    private bool leftGripPressed;
+    private bool rightGripPressed;
 
     private bool menuOpen;
     private int menuIndex;
@@ -71,7 +74,7 @@ public class GroupSelectionManipulationVR : MonoBehaviour
 
     private void Start()
     {
-        RefreshDevice();
+        RefreshDevices();
         ResolveReferences();
 
         if (headsetCamera == null && Camera.main != null)
@@ -89,8 +92,8 @@ public class GroupSelectionManipulationVR : MonoBehaviour
 
     private void Update()
     {
-        if (!leftDevice.isValid)
-            RefreshDevice();
+        if (!leftDevice.isValid || !rightDevice.isValid)
+            RefreshDevices();
 
         if (selectionHand == null)
             ResolveReferences();
@@ -121,18 +124,23 @@ public class GroupSelectionManipulationVR : MonoBehaviour
     {
         if (!menuOpen)
         {
-            if (GripDown() && menuObjects.Count > 0)
+            if (LeftGripDown() && menuObjects.Count > 0)
                 OpenMenu();
 
             return;
         }
 
-        int scrollDirection = GetThumbstickScrollDirection();
-        if (scrollDirection != 0)
-            AdvanceMenuIndex(scrollDirection);
+        if (LeftTriggerDown())
+            AdvanceMenuIndex(-1);
 
-        if (TriggerDown())
-            ActivateMenuEntry();
+        if (RightTriggerDown())
+            AdvanceMenuIndex(1);
+
+        if (RightGripDown())
+            ToggleFocusedSelection();
+
+        if (LeftGripDown())
+            ConfirmMenuSelection();
     }
 
     private void HandleManipulationInput()
@@ -143,13 +151,13 @@ public class GroupSelectionManipulationVR : MonoBehaviour
             return;
         }
 
-        if (GripDown())
+        if (LeftGripDown())
         {
             EndManipulation();
             return;
         }
 
-        if (TriggerDown())
+        if (LeftTriggerDown())
         {
             AdvanceMode();
             return;
@@ -158,9 +166,10 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         ApplyManipulation();
     }
 
-    private void RefreshDevice()
+    private void RefreshDevices()
     {
         leftDevice = InputDevices.GetDeviceAtXRNode(XRNode.LeftHand);
+        rightDevice = InputDevices.GetDeviceAtXRNode(XRNode.RightHand);
     }
 
     private void ResolveReferences()
@@ -195,28 +204,46 @@ public class GroupSelectionManipulationVR : MonoBehaviour
 
     private void ReadButtons()
     {
-        prevTriggerPressed = triggerPressed;
-        prevGripPressed = gripPressed;
-        triggerPressed = false;
-        gripPressed = false;
-        thumbstickAxis = Vector2.zero;
+        prevLeftTriggerPressed = leftTriggerPressed;
+        prevRightTriggerPressed = rightTriggerPressed;
+        prevLeftGripPressed = leftGripPressed;
+        prevRightGripPressed = rightGripPressed;
+        leftTriggerPressed = false;
+        rightTriggerPressed = false;
+        leftGripPressed = false;
+        rightGripPressed = false;
 
-        if (!leftDevice.isValid)
-            return;
+        if (leftDevice.isValid)
+        {
+            leftDevice.TryGetFeatureValue(CommonUsages.triggerButton, out leftTriggerPressed);
+            leftDevice.TryGetFeatureValue(CommonUsages.gripButton, out leftGripPressed);
+        }
 
-        leftDevice.TryGetFeatureValue(CommonUsages.triggerButton, out triggerPressed);
-        leftDevice.TryGetFeatureValue(CommonUsages.gripButton, out gripPressed);
-        leftDevice.TryGetFeatureValue(CommonUsages.primary2DAxis, out thumbstickAxis);
+        if (rightDevice.isValid)
+        {
+            rightDevice.TryGetFeatureValue(CommonUsages.triggerButton, out rightTriggerPressed);
+            rightDevice.TryGetFeatureValue(CommonUsages.gripButton, out rightGripPressed);
+        }
     }
 
-    private bool TriggerDown()
+    private bool LeftTriggerDown()
     {
-        return triggerPressed && !prevTriggerPressed;
+        return leftTriggerPressed && !prevLeftTriggerPressed;
     }
 
-    private bool GripDown()
+    private bool RightTriggerDown()
     {
-        return gripPressed && !prevGripPressed;
+        return rightTriggerPressed && !prevRightTriggerPressed;
+    }
+
+    private bool LeftGripDown()
+    {
+        return leftGripPressed && !prevLeftGripPressed;
+    }
+
+    private bool RightGripDown()
+    {
+        return rightGripPressed && !prevRightGripPressed;
     }
 
     private void UpdateMenuObjects()
@@ -278,39 +305,6 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         menuOpen = false;
     }
 
-    private int GetThumbstickScrollDirection()
-    {
-        const float scrollThreshold = 0.65f;
-        const float resetThreshold = 0.35f;
-
-        if (!leftDevice.isValid)
-            return 0;
-
-        float y = thumbstickAxis.y;
-
-        if (!thumbstickScrollReady)
-        {
-            if (Mathf.Abs(y) <= resetThreshold)
-                thumbstickScrollReady = true;
-
-            return 0;
-        }
-
-        if (y >= scrollThreshold)
-        {
-            thumbstickScrollReady = false;
-            return -1;
-        }
-
-        if (y <= -scrollThreshold)
-        {
-            thumbstickScrollReady = false;
-            return 1;
-        }
-
-        return 0;
-    }
-
     private void AdvanceMenuIndex(int direction)
     {
         int entryCount = GetMenuEntryCount();
@@ -320,21 +314,17 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         menuIndex = (menuIndex + direction + entryCount) % entryCount;
     }
 
-    private void ActivateMenuEntry()
+    private void ToggleFocusedSelection()
     {
         int objectCount = menuObjects.Count;
-        if (objectCount == 0)
-        {
-            CloseMenu();
+        if (objectCount == 0 || menuIndex >= objectCount)
             return;
-        }
 
-        if (menuIndex < objectCount)
-        {
-            ToggleSelection(menuObjects[menuIndex]);
-            return;
-        }
+        ToggleSelection(menuObjects[menuIndex]);
+    }
 
+    private void ConfirmMenuSelection()
+    {
         CloseMenu();
         if (selectedObjects.Count > 0)
             BeginManipulation();
@@ -620,8 +610,9 @@ public class GroupSelectionManipulationVR : MonoBehaviour
             vrMenuText.text =
                 "Group Selection Menu\n\n" +
                 BuildMenuText() + "\n" +
-                "Left Thumbstick = Scroll List\n" +
-                "Left Trigger = Toggle / Confirm";
+                "Left/Right Trigger = Move\n" +
+                "Right Grip = Toggle Select\n" +
+                "Left Grip = Start Group Edit";
         }
         else if (manipulationMode)
         {
@@ -636,8 +627,9 @@ public class GroupSelectionManipulationVR : MonoBehaviour
             vrMenuText.text =
                 "Group Selection Controls\n\n" +
                 "Left Grip = Open Group Menu\n" +
-                "Left Thumbstick = Scroll List\n" +
-                "Left Trigger = Toggle / Confirm";
+                "Left/Right Trigger = Move\n" +
+                "Right Grip = Toggle Select\n" +
+                "Left Grip = Start Group Edit";
         }
     }
 
@@ -696,9 +688,9 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         GUI.Box(new Rect(x, y, width, height),
             "Group Selection (Left Hand)\n" +
             "Mode: " + modeText + "\n\n" +
-            "Trigger = Open menu / toggle item / confirm\n" +
-            "Thumbstick = Scroll menu\n" +
-            "Grip = Exit manipulation\n" +
-            "While manipulating: Trigger cycles Move -> Rotate -> Scale -> Duplicate");
+            "Left Grip = Open menu / exit manipulation\n" +
+            "Left/Right Trigger = Move through list\n" +
+            "Right Grip = Toggle item\n" +
+            "While manipulating: Left Trigger cycles Move -> Rotate -> Scale -> Duplicate");
     }
 }
