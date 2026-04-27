@@ -92,95 +92,76 @@ public class SpawnMenu : MonoBehaviour
     }
 
     void Update()
-{
-    if (!leftDevice.isValid || !rightDevice.isValid)
-        RefreshDevices();
-
-    if (!spawnModeEnabled)
     {
-        ResetModes();
-        UpdateVRMenu();
-        return;
-    }
+        if (!leftDevice.isValid || !rightDevice.isValid)
+            RefreshDevices();
 
-    if (spawnPrefabs == null || spawnPrefabs.Length == 0)
-    {
-        UpdateVRMenu();
-        return;
-    }
-
-    ReadButtons(
-        out bool leftTriggerDown,
-        out bool rightTriggerDown,
-        out bool leftGripDown,
-        out bool rightGripDown
-    );
-
-    bool otherModeActive =
-        (groupSelectionMenu != null && groupSelectionMenu.IsGroupModeActive) ||
-        (singleSelectionMenu != null && singleSelectionMenu.IsSelectionModeActive);
-
-    // IMPORTANT:
-    // Left Trigger should always cancel spawn mode if spawn mode is active.
-    // This must happen before blocking because of other modes.
-    if (leftTriggerDown && IsSpawnModeActive)
-    {
-        ExitSpawnMode();
-        UpdateVRMenu();
-        return;
-    }
-
-    // If another mode is active, do not let spawn mode open.
-    // But cancel above still works if spawn was already active.
-    if (!IsSpawnModeActive && otherModeActive)
-    {
-        return;
-    }
-
-    // Idle state: Left Trigger opens spawn menu
-    if (!menuOpen && !placementMode && !orientationMode)
-    {
-        if (leftTriggerDown)
-            menuOpen = true;
-
-        UpdateVRMenu();
-        return;
-    }
-
-    if (menuOpen)
-    {
-        HandleMenuMode(leftTriggerDown, rightTriggerDown, leftGripDown, rightGripDown);
-    }
-    else if (placementMode)
-    {
-        HandlePlacementMode(leftTriggerDown, rightTriggerDown);
-    }
-    else if (orientationMode)
-    {
-        HandleOrientationMode(leftTriggerDown, rightGripDown);
-    }
-
-    UpdateVRMenu();
-}
-
-    private void HandleMenuMode(bool leftTriggerDown, bool rightTriggerDown, bool leftGripDown, bool rightGripDown)
-    {
-        // Cancel out of spawn menu completely
-        if (leftTriggerDown)
+        if (!spawnModeEnabled)
         {
-            ExitSpawnMode();
+            ResetModes();
+            UpdateVRMenu();
             return;
         }
 
-        // Change prefab
+        if (spawnPrefabs == null || spawnPrefabs.Length == 0)
+        {
+            UpdateVRMenu();
+            return;
+        }
+
+        ReadButtons(
+            out bool leftTriggerDown,
+            out bool rightTriggerDown,
+            out bool leftGripDown,
+            out bool rightGripDown
+        );
+
+        bool otherModeActive =
+            (groupSelectionMenu != null && groupSelectionMenu.IsGroupModeActive) ||
+            (singleSelectionMenu != null && singleSelectionMenu.IsSelectionModeActive);
+
+        if (!IsSpawnModeActive && otherModeActive)
+        {
+            UpdateVRMenu();
+            return;
+        }
+
+        if (!menuOpen && !placementMode && !orientationMode)
+        {
+            if (leftTriggerDown)
+                menuOpen = true;
+
+            UpdateVRMenu();
+            return;
+        }
+
+        if (menuOpen)
+        {
+            HandleMenuMode(leftTriggerDown, rightTriggerDown, leftGripDown, rightGripDown);
+        }
+        else if (placementMode)
+        {
+            HandlePlacementMode(leftTriggerDown, rightTriggerDown);
+        }
+        else if (orientationMode)
+        {
+            HandleOrientationMode(leftTriggerDown, rightGripDown);
+        }
+
+        UpdateVRMenu();
+    }
+
+    private void HandleMenuMode(bool leftTriggerDown, bool rightTriggerDown, bool leftGripDown, bool rightGripDown)
+    {
+        if (leftTriggerDown)
+            selectedIndex = (selectedIndex - 1 + spawnPrefabs.Length) % spawnPrefabs.Length;
+
         if (rightTriggerDown)
             selectedIndex = (selectedIndex + 1) % spawnPrefabs.Length;
 
-        // Add or remove from multi-select
         if (rightGripDown)
             ToggleMultiSelect(spawnPrefabs[selectedIndex]);
 
-        // Start placement
         if (leftGripDown)
         {
             if (multiSelectedPrefabs.Count > 0)
@@ -194,14 +175,13 @@ public class SpawnMenu : MonoBehaviour
     {
         UpdatePreviewPosition();
 
-        // Cancel out of placement mode completely
         if (leftTriggerDown)
         {
-            ExitSpawnMode();
+            CancelPreview();
+            menuOpen = true;
             return;
         }
 
-        // Go to orientation mode
         if (rightTriggerDown)
         {
             placementMode = false;
@@ -212,10 +192,10 @@ public class SpawnMenu : MonoBehaviour
 
     private void HandleOrientationMode(bool leftTriggerDown, bool rightGripDown)
     {
-        // Cancel out of orientation mode completely
         if (leftTriggerDown)
         {
-            ExitSpawnMode();
+            orientationMode = false;
+            placementMode = true;
             return;
         }
 
@@ -227,7 +207,6 @@ public class SpawnMenu : MonoBehaviour
                 previewObject.transform.rotation = Quaternion.Euler(0f, currentYRotation, 0f);
         }
 
-        // Confirm spawn
         if (rightGripDown)
             ConfirmSpawn();
     }
@@ -356,10 +335,10 @@ public class SpawnMenu : MonoBehaviour
             vrMenuText.text =
                 "Spawn Menu\n\n" +
                 BuildMenuText() + "\n" +
+                "Left Trigger = Previous Prefab\n" +
                 "Right Trigger = Change Prefab\n" +
                 "Right Grip = Add/Remove Multi-Select\n" +
-                "Left Grip = Start Placement\n" +
-                "Left Trigger = Cancel / Exit";
+                "Left Grip = Start Placement";
         }
         else if (placementMode)
         {
@@ -367,7 +346,7 @@ public class SpawnMenu : MonoBehaviour
                 "Placement Mode\n\n" +
                 "Preview follows raycast hit point\n" +
                 "Right Trigger = Orientation\n" +
-                "Left Trigger = Cancel / Exit";
+                "Left Trigger = Back To Spawn Menu";
         }
         else if (orientationMode)
         {
@@ -375,7 +354,7 @@ public class SpawnMenu : MonoBehaviour
                 "Orientation Mode\n\n" +
                 "Hold Right Trigger = Rotate\n" +
                 "Right Grip = Confirm Spawn\n" +
-                "Left Trigger = Cancel / Exit";
+                "Left Trigger = Back To Placement";
         }
         else
         {

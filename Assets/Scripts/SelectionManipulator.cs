@@ -8,7 +8,6 @@ public class SelectionManipulator : MonoBehaviour
     private float hoverBlockTimer = 0f;
 
     public SpawnMenu spawnMenu;
-    public GroupSelectionManipulationVR groupSelectionMenu;
 
     [Header("Ray Settings")]
     public Transform rayOrigin;
@@ -72,9 +71,6 @@ public class SelectionManipulator : MonoBehaviour
         if (spawnMenu == null)
             spawnMenu = FindObjectOfType<SpawnMenu>(true);
 
-        if (groupSelectionMenu == null)
-            groupSelectionMenu = FindObjectOfType<GroupSelectionManipulationVR>(true);
-
         if (rayOrigin == null)
             rayOrigin = transform;
 
@@ -110,20 +106,6 @@ public class SelectionManipulator : MonoBehaviour
         // Idle: Right Grip starts ray selection
         if (!selectionMode && !manipulationMode)
         {
-            if (leftTriggerDown && spawnMenu != null)
-            {
-                spawnMenu.OpenSpawnMenuFromIdle();
-                UpdateVRMenu();
-                return;
-            }
-
-            if (leftGripDown && groupSelectionMenu != null)
-            {
-                groupSelectionMenu.OpenGroupMenuFromIdle();
-                UpdateVRMenu();
-                return;
-            }
-
             if (rightGripDown)
                 StartSelectionMode();
 
