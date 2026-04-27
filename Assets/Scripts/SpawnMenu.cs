@@ -154,32 +154,24 @@ public class SpawnMenu : MonoBehaviour
     private void HandleMenuMode(bool leftTriggerDown, bool rightTriggerDown, bool leftGripDown, bool rightGripDown)
     {
         if (leftTriggerDown)
-            selectedIndex = (selectedIndex - 1 + GetSpawnMenuEntryCount()) % GetSpawnMenuEntryCount();
+        {
+            ExitSpawnMode();
+            return;
+        }
 
         if (rightTriggerDown)
-            selectedIndex = (selectedIndex + 1) % GetSpawnMenuEntryCount();
+            selectedIndex = (selectedIndex + 1) % spawnPrefabs.Length;
 
-        bool isBackEntry = selectedIndex == spawnPrefabs.Length;
-
-        if (rightGripDown && !isBackEntry)
+        if (rightGripDown)
             ToggleMultiSelect(spawnPrefabs[selectedIndex]);
 
         if (leftGripDown)
         {
-            if (isBackEntry)
-            {
-                ExitSpawnMode();
-            }
-            else if (multiSelectedPrefabs.Count > 0)
+            if (multiSelectedPrefabs.Count > 0)
                 StartMultiPlacement();
             else
                 StartSinglePlacement(spawnPrefabs[selectedIndex]);
         }
-    }
-
-    private int GetSpawnMenuEntryCount()
-    {
-        return spawnPrefabs.Length + 1;
     }
 
     private void HandlePlacementMode(bool leftTriggerDown, bool rightTriggerDown)
@@ -346,7 +338,7 @@ public class SpawnMenu : MonoBehaviour
             vrMenuText.text =
                 "Spawn Menu\n\n" +
                 BuildMenuText() + "\n" +
-                "Left Trigger = Previous Prefab\n" +
+                "Left Trigger = Back\n" +
                 "Right Trigger = Change Prefab\n" +
                 "Right Grip = Add/Remove Multi-Select\n" +
                 "Left Grip = Start Placement";
@@ -528,8 +520,6 @@ public class SpawnMenu : MonoBehaviour
 
             builder.AppendLine(cursor + check + spawnPrefabs[i].name);
         }
-
-        builder.AppendLine((selectedIndex == spawnPrefabs.Length ? "> " : "  ") + "Back");
 
         return builder.ToString();
     }
