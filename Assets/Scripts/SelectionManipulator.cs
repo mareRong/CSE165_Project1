@@ -439,18 +439,22 @@ public class SelectionManipulator : MonoBehaviour
     }
 
     private void SelectObject(GameObject obj)
-    {
-        if (selectedObject != null)
-            DeselectObject();
+{
+    if (selectedObject != null)
+        DeselectObject();
 
-        selectedObject = obj;
-        selectedRenderers = selectedObject.GetComponentsInChildren<Renderer>();
+    // FIX: clear hover FIRST
+    ClearHoverHighlight();
 
-        SaveSelectedOriginalBlocks();
+    selectedObject = obj;
+    selectedRenderers = selectedObject.GetComponentsInChildren<Renderer>();
 
-        ClearHoverHighlight();
-        SetRendererColor(selectedRenderers, selectedColor);
-    }
+    // Save correct original material
+    SaveSelectedOriginalBlocks();
+
+    // Apply selected highlight
+    SetRendererColor(selectedRenderers, selectedColor);
+}
 
     private void DeselectObject()
     {
