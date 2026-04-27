@@ -765,7 +765,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 9.82, y: 2.73}
-  m_SizeDelta: {x: 800, y: 600}
+  m_SizeDelta: {x: 1600, y: 1200}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &527381671
 MonoBehaviour:
@@ -3452,25 +3452,17 @@ MonoBehaviour:
     m_Bits: 4294967295
   selectorDistance: 0.65
   selectorRadius: 1.1
+  vrMenuCanvas: {fileID: 0}
+  vrMenuText: {fileID: 0}
+  headsetCamera: {fileID: 0}
   menuDistance: 0.42
-  menuVerticalOffset: 0.08
-  menuWidth: 0.28
-  rowHeight: 0.06
+  menuOffset: {x: 0, y: -0.15, z: 0}
   maxVisibleRows: 4
-  menuDepth: 0.004
-  menuRowDepth: 0.002
-  menuRowForwardOffset: 0.015
-  menuTextForwardOffset: 0.026
   scaleSensitivity: 1.1
   duplicateOffset: 0.35
   minObjectScale: 0.1
   maxObjectScale: 4
   selectedColor: {r: 0.2, g: 1, b: 0.45, a: 1}
-  menuBackgroundColor: {r: 0.1, g: 0.12, b: 0.16, a: 0.95}
-  menuRowColor: {r: 0.94, g: 0.94, b: 0.96, a: 0.95}
-  menuFocusedRowColor: {r: 1, g: 0.82, b: 0.25, a: 1}
-  menuSelectedRowColor: {r: 0.2, g: 1, b: 0.45, a: 1}
-  menuBorderColor: {r: 0.78, g: 0.82, b: 0.9, a: 1}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
