@@ -1,11 +1,11 @@
 using System.Collections.Generic;
+using System.Text;
+using TMPro;
 using UnityEngine;
 using UnityEngine.XR;
 
 public class GroupSelectionManipulationVR : MonoBehaviour
 {
-    private const string PreferredIndicatorShaderName = "Universal Render Pipeline/Unlit";
-
     private enum GroupManipulationMode
     {
         Move,
@@ -19,13 +19,6 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         public bool UseGravity;
     }
 
-    private sealed class MenuRowVisual
-    {
-        public Transform Root;
-        public Renderer BackgroundRenderer;
-        public TextMesh Label;
-    }
-
     [Header("References")]
     public Transform selectionHand;
     public LayerMask selectableMask = ~0;
@@ -34,16 +27,15 @@ public class GroupSelectionManipulationVR : MonoBehaviour
     public float selectorDistance = 0.65f;
     public float selectorRadius = 1.1f;
 
+    [Header("VR Menu Canvas")]
+    public GameObject vrMenuCanvas;
+    public TextMeshProUGUI vrMenuText;
+    public Transform headsetCamera;
+    public float menuDistance = 2f;
+    public Vector3 menuOffset = new Vector3(0f, -0.15f, 0f);
+
     [Header("Menu Layout")]
-    public float menuDistance = 0.36f;
-    public float menuVerticalOffset = 0.05f;
-    public float menuWidth = 0.24f;
-    public float rowHeight = 0.052f;
     public int maxVisibleRows = 3;
-    public float menuDepth = 0.01f;
-    public float menuRowDepth = 0.003f;
-    public float menuRowForwardOffset = 0.02f;
-    public float menuTextForwardOffset = 0.03f;
 
     [Header("Manipulation")]
     public float scaleSensitivity = 1.1f;
@@ -53,16 +45,10 @@ public class GroupSelectionManipulationVR : MonoBehaviour
 
     [Header("Menu Colors")]
     public Color selectedColor = new Color(0.2f, 1f, 0.45f, 1f);
-    public Color menuBackgroundColor = new Color(0.1f, 0.12f, 0.16f, 0.95f);
-    public Color menuRowColor = new Color(0.94f, 0.94f, 0.96f, 0.95f);
-    public Color menuFocusedRowColor = new Color(1f, 0.82f, 0.25f, 1f);
-    public Color menuSelectedRowColor = new Color(0.2f, 1f, 0.45f, 1f);
-    public Color menuBorderColor = new Color(0.78f, 0.82f, 0.9f, 1f);
 
     private readonly List<SelectableObject> selectedObjects = new List<SelectableObject>();
     private readonly List<SelectableObject> menuObjects = new List<SelectableObject>();
     private readonly Dictionary<Rigidbody, RigidbodyState> rigidbodyStates = new Dictionary<Rigidbody, RigidbodyState>();
-    private readonly List<MenuRowVisual> menuRows = new List<MenuRowVisual>();
 
     private InputDevice leftDevice;
     private bool prevTriggerPressed;
@@ -79,19 +65,16 @@ public class GroupSelectionManipulationVR : MonoBehaviour
     private Vector3 lastHandPosition;
     private Quaternion lastHandRotation;
 
-    private Transform menuRoot;
-    private Transform menuPanel;
-    private Renderer menuPanelRenderer;
-    private Transform menuBorder;
-    private Renderer menuBorderRenderer;
-    private TextMesh menuTitleText;
-    private TextMesh menuHintText;
-
     private void Start()
     {
         RefreshDevice();
         ResolveReferences();
-        CreateMenuVisuals();
+
+        if (headsetCamera == null && Camera.main != null)
+            headsetCamera = Camera.main.transform;
+
+        if (vrMenuCanvas != null)
+            vrMenuCanvas.SetActive(true);
     }
 
     private void Update()
@@ -105,46 +88,34 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         CleanupSelection();
         ReadButtons();
         UpdateMenuObjects();
-        UpdateMenuAnchor();
 
         if (manipulationMode)
         {
             HandleManipulationInput();
+            UpdateVRMenu();
             return;
         }
 
         HandleSelectionInput();
+        UpdateVRMenu();
     }
 
     private void HandleSelectionInput()
     {
         if (!menuOpen)
         {
-            if (TriggerDown())
-            {
-                if (menuObjects.Count > 0)
-                {
-                    OpenMenu();
-                }
-                else if (selectedObjects.Count > 0)
-                {
-                    OpenMenu();
-                }
-            }
+            if (TriggerDown() && menuObjects.Count > 0)
+                OpenMenu();
 
             return;
         }
 
         int scrollDirection = GetThumbstickScrollDirection();
         if (scrollDirection != 0)
-        {
             AdvanceMenuIndex(scrollDirection);
-        }
 
         if (TriggerDown())
-        {
             ActivateMenuEntry();
-        }
     }
 
     private void HandleManipulationInput()
@@ -211,6 +182,7 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         prevGripPressed = gripPressed;
         triggerPressed = false;
         gripPressed = false;
+        thumbstickAxis = Vector2.zero;
 
         if (!leftDevice.isValid)
             return;
@@ -282,14 +254,11 @@ public class GroupSelectionManipulationVR : MonoBehaviour
 
         menuOpen = true;
         menuIndex = Mathf.Clamp(menuIndex, 0, GetMenuEntryCount() - 1);
-        UpdateMenuVisuals();
     }
 
     private void CloseMenu()
     {
         menuOpen = false;
-        if (menuRoot != null)
-            menuRoot.gameObject.SetActive(false);
     }
 
     private int GetThumbstickScrollDirection()
@@ -332,7 +301,6 @@ public class GroupSelectionManipulationVR : MonoBehaviour
             return;
 
         menuIndex = (menuIndex + direction + entryCount) % entryCount;
-        UpdateMenuVisuals();
     }
 
     private void ActivateMenuEntry()
@@ -347,7 +315,6 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         if (menuIndex < objectCount)
         {
             ToggleSelection(menuObjects[menuIndex]);
-            UpdateMenuVisuals();
             return;
         }
 
@@ -610,213 +577,88 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         return sum / selectedObjects.Count;
     }
 
-    private void CreateMenuVisuals()
+    private void UpdateVRMenu()
     {
-        menuRoot = new GameObject("GroupSelectionMenu").transform;
-        menuRoot.SetParent(transform, false);
-        menuRoot.gameObject.SetActive(false);
-
-        menuPanel = GameObject.CreatePrimitive(PrimitiveType.Cube).transform;
-        menuPanel.name = "MenuPanel";
-        menuPanel.SetParent(menuRoot, false);
-        Destroy(menuPanel.GetComponent<Collider>());
-        menuPanelRenderer = menuPanel.GetComponent<Renderer>();
-        menuPanelRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-        menuPanelRenderer.receiveShadows = false;
-        menuPanelRenderer.material = new Material(FindIndicatorShader());
-        menuPanelRenderer.material.color = menuBackgroundColor;
-
-        menuBorder = GameObject.CreatePrimitive(PrimitiveType.Cube).transform;
-        menuBorder.name = "MenuBorder";
-        menuBorder.SetParent(menuRoot, false);
-        Destroy(menuBorder.GetComponent<Collider>());
-        menuBorderRenderer = menuBorder.GetComponent<Renderer>();
-        menuBorderRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-        menuBorderRenderer.receiveShadows = false;
-        menuBorderRenderer.material = new Material(FindIndicatorShader());
-        menuBorderRenderer.material.color = menuBorderColor;
-
-        menuTitleText = CreateMenuText("MenuTitle", menuRoot, 0.02f, TextAnchor.MiddleLeft);
-        menuHintText = CreateMenuText("MenuHint", menuRoot, 0.013f, TextAnchor.MiddleLeft);
-
-        int totalRows = Mathf.Max(1, maxVisibleRows + 1);
-        for (int i = 0; i < totalRows; i++)
-        {
-            MenuRowVisual row = new MenuRowVisual();
-            row.Root = new GameObject("Row" + i).transform;
-            row.Root.SetParent(menuRoot, false);
-
-            GameObject rowBackground = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            rowBackground.name = "Background";
-            rowBackground.transform.SetParent(row.Root, false);
-            Destroy(rowBackground.GetComponent<Collider>());
-
-            row.BackgroundRenderer = rowBackground.GetComponent<Renderer>();
-            row.BackgroundRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            row.BackgroundRenderer.receiveShadows = false;
-            row.BackgroundRenderer.material = new Material(FindIndicatorShader());
-
-            row.Label = CreateMenuText("Label", row.Root, 0.016f, TextAnchor.MiddleLeft);
-            menuRows.Add(row);
-        }
-    }
-
-    private TextMesh CreateMenuText(string objectName, Transform parent, float characterSize, TextAnchor anchor)
-    {
-        GameObject textObject = new GameObject(objectName);
-        textObject.transform.SetParent(parent, false);
-
-        TextMesh textMesh = textObject.AddComponent<TextMesh>();
-        textMesh.anchor = anchor;
-        textMesh.alignment = TextAlignment.Left;
-        textMesh.characterSize = characterSize;
-        textMesh.fontSize = 64;
-        textMesh.color = Color.black;
-        textMesh.text = string.Empty;
-
-        MeshRenderer renderer = textObject.GetComponent<MeshRenderer>();
-        renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-        renderer.receiveShadows = false;
-
-        return textMesh;
-    }
-
-    private Shader FindIndicatorShader()
-    {
-        Shader shader = Shader.Find(PreferredIndicatorShaderName);
-        if (shader == null)
-            shader = Shader.Find("Universal Render Pipeline/Lit");
-        if (shader == null)
-            shader = Shader.Find("Standard");
-
-        return shader;
-    }
-
-    private void UpdateMenuAnchor()
-    {
-        if (menuRoot == null || selectionHand == null)
+        if (vrMenuCanvas == null || vrMenuText == null)
             return;
 
-        Vector3 anchorPosition = selectionHand.position +
-                                 selectionHand.forward * menuDistance +
-                                 Vector3.up * menuVerticalOffset;
+        vrMenuCanvas.SetActive(true);
 
-        menuRoot.position = anchorPosition;
+        if (headsetCamera != null)
+        {
+            vrMenuCanvas.transform.position =
+                headsetCamera.position +
+                headsetCamera.forward * menuDistance +
+                menuOffset;
 
-        if (Camera.main != null)
-        {
-            Vector3 lookDirection = Camera.main.transform.position - menuRoot.position;
-            lookDirection = Vector3.ProjectOnPlane(lookDirection, Vector3.up);
-            if (lookDirection.sqrMagnitude > 0.0001f)
-                menuRoot.rotation = Quaternion.LookRotation(lookDirection.normalized, Vector3.up);
-        }
-        else
-        {
-            Vector3 handForward = Vector3.ProjectOnPlane(selectionHand.forward, Vector3.up);
-            if (handForward.sqrMagnitude > 0.0001f)
-                menuRoot.rotation = Quaternion.LookRotation(handForward.normalized, Vector3.up);
+            vrMenuCanvas.transform.rotation =
+                Quaternion.LookRotation(vrMenuCanvas.transform.position - headsetCamera.position);
         }
 
         if (menuOpen)
-            UpdateMenuVisuals();
+        {
+            vrMenuText.text =
+                "Group Selection Menu\n\n" +
+                BuildMenuText() + "\n" +
+                "Left Thumbstick = Scroll List\n" +
+                "Left Trigger = Toggle / Confirm";
+        }
+        else if (manipulationMode)
+        {
+            vrMenuText.text =
+                "Group Manipulation Mode\n\n" +
+                "Current Mode: " + currentMode + "\n" +
+                "Left Trigger = Next Mode\n" +
+                "Left Grip = Exit Manipulation";
+        }
+        else
+        {
+            vrMenuText.text =
+                "Group Selection Controls\n\n" +
+                "Left Trigger = Open Group Menu\n" +
+                "Left Thumbstick = Scroll List\n" +
+                "Left Grip = Exit Manipulation";
+        }
     }
 
-    private void UpdateMenuVisuals()
+    private string BuildMenuText()
     {
-        if (menuRoot == null || menuPanel == null || menuTitleText == null || menuHintText == null)
-            return;
-
-        if (!menuOpen || menuObjects.Count == 0)
-        {
-            menuRoot.gameObject.SetActive(false);
-            return;
-        }
-
-        menuRoot.gameObject.SetActive(true);
-
+        StringBuilder builder = new StringBuilder();
         int objectCount = menuObjects.Count;
-        int visibleObjectRows = Mathf.Min(objectCount, Mathf.Max(1, maxVisibleRows));
-        int visibleRows = visibleObjectRows + 1;
-        float headerHeight = 0.09f;
-        float footerHeight = 0.03f;
-        float menuHeight = headerHeight + visibleRows * rowHeight + footerHeight;
-        float borderInset = 0.008f;
 
-        menuPanel.localScale = new Vector3(menuWidth, menuHeight, menuDepth);
-        menuPanel.localPosition = new Vector3(0f, -menuHeight * 0.5f, 0.008f);
+        builder.AppendLine("Selectable Objects:");
 
-        if (menuBorder != null)
+        if (objectCount == 0)
         {
-            menuBorder.localScale = new Vector3(menuWidth + borderInset, menuHeight + borderInset, menuDepth);
-            menuBorder.localPosition = new Vector3(0f, -menuHeight * 0.5f, 0f);
+            builder.AppendLine("  (none)");
+            return builder.ToString();
         }
 
+        int visibleRows = Mathf.Min(objectCount, Mathf.Max(1, maxVisibleRows));
         int scrollStart = 0;
-        if (objectCount > visibleObjectRows)
-            scrollStart = Mathf.Clamp(menuIndex - visibleObjectRows + 1, 0, objectCount - visibleObjectRows);
+        if (objectCount > visibleRows)
+            scrollStart = Mathf.Clamp(menuIndex - visibleRows + 1, 0, objectCount - visibleRows);
 
-        menuTitleText.text = "Group Select";
-        menuTitleText.transform.localPosition = new Vector3(-menuWidth * 0.42f, -0.03f, -menuTextForwardOffset);
-
-        int windowStart = objectCount == 0 ? 0 : scrollStart + 1;
-        int windowEnd = Mathf.Min(objectCount, scrollStart + visibleObjectRows);
-        menuHintText.text = selectedObjects.Count + " selected | " + windowStart + "-" + windowEnd + " of " + objectCount;
-        menuHintText.transform.localPosition = new Vector3(-menuWidth * 0.42f, -0.064f, -menuTextForwardOffset);
-
-        int rowSlot = 0;
-        for (; rowSlot < visibleObjectRows; rowSlot++)
+        int scrollEnd = Mathf.Min(objectCount, scrollStart + visibleRows);
+        for (int i = scrollStart; i < scrollEnd; i++)
         {
-            int objectIndex = scrollStart + rowSlot;
-            MenuRowVisual row = menuRows[rowSlot];
-            SelectableObject selectable = menuObjects[objectIndex];
-            bool isFocused = menuIndex == objectIndex;
+            SelectableObject selectable = menuObjects[i];
+            bool isFocused = menuIndex == i;
             bool isSelected = selectedObjects.Contains(selectable);
 
-            string prefix = isSelected ? "[x]  " : "[ ]  ";
-            ConfigureMenuRow(
-                row,
-                rowSlot,
-                prefix + selectable.name,
-                isFocused,
-                isSelected,
-                menuRowColor);
+            string cursor = isFocused ? "> " : "  ";
+            string check = isSelected ? "[X] " : "[ ] ";
+            builder.AppendLine(cursor + check + selectable.name);
         }
 
-        MenuRowVisual confirmRow = menuRows[rowSlot];
         bool confirmFocused = menuIndex == objectCount;
-        ConfigureMenuRow(
-            confirmRow,
-            rowSlot,
-            "Start Group Edit",
-            confirmFocused,
-            false,
-            selectedObjects.Count > 0 ? selectedColor : menuRowColor);
-        rowSlot++;
+        string confirmCursor = confirmFocused ? "> " : "  ";
+        builder.AppendLine(confirmCursor + "Start Group Edit");
+        builder.AppendLine();
+        builder.AppendLine("Showing " + (scrollStart + 1) + "-" + scrollEnd + " of " + objectCount);
+        builder.AppendLine("Selected: " + selectedObjects.Count);
 
-        for (int i = rowSlot; i < menuRows.Count; i++)
-            menuRows[i].Root.gameObject.SetActive(false);
-    }
-
-    private void ConfigureMenuRow(MenuRowVisual row, int rowIndex, string label, bool isFocused, bool isSelected, Color baseColor)
-    {
-        row.Root.gameObject.SetActive(true);
-
-        float y = -0.125f - rowIndex * rowHeight;
-        row.Root.localPosition = new Vector3(0f, y, -menuRowForwardOffset);
-
-        Transform rowBackground = row.BackgroundRenderer.transform;
-        rowBackground.localPosition = Vector3.zero;
-        rowBackground.localScale = new Vector3(menuWidth * 0.9f, rowHeight * 0.74f, menuRowDepth);
-
-        Color rowColor = baseColor;
-        if (isSelected)
-            rowColor = menuSelectedRowColor;
-        if (isFocused)
-            rowColor = menuFocusedRowColor;
-
-        row.BackgroundRenderer.material.color = rowColor;
-        row.Label.text = label;
-        row.Label.transform.localPosition = new Vector3(-menuWidth * 0.4f, 0f, -menuTextForwardOffset);
+        return builder.ToString();
     }
 
     private void OnGUI()
