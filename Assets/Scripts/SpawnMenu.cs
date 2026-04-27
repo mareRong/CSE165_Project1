@@ -92,64 +92,76 @@ public class SpawnMenu : MonoBehaviour
     }
 
     void Update()
+{
+    if (!leftDevice.isValid || !rightDevice.isValid)
+        RefreshDevices();
+
+    if (!spawnModeEnabled)
     {
-        if (!leftDevice.isValid || !rightDevice.isValid)
-            RefreshDevices();
+        ResetModes();
+        UpdateVRMenu();
+        return;
+    }
 
-        if (!spawnModeEnabled)
-        {
-            ResetModes();
-            UpdateVRMenu();
-            return;
-        }
+    if (spawnPrefabs == null || spawnPrefabs.Length == 0)
+    {
+        UpdateVRMenu();
+        return;
+    }
 
-        if (spawnPrefabs == null || spawnPrefabs.Length == 0)
-        {
-            UpdateVRMenu();
-            return;
-        }
+    ReadButtons(
+        out bool leftTriggerDown,
+        out bool rightTriggerDown,
+        out bool leftGripDown,
+        out bool rightGripDown
+    );
 
-        ReadButtons(
-            out bool leftTriggerDown,
-            out bool rightTriggerDown,
-            out bool leftGripDown,
-            out bool rightGripDown
-        );
+    bool otherModeActive =
+        (groupSelectionMenu != null && groupSelectionMenu.IsGroupModeActive) ||
+        (singleSelectionMenu != null && singleSelectionMenu.IsSelectionModeActive);
 
-        bool otherModeActive =
-            (groupSelectionMenu != null && groupSelectionMenu.IsGroupModeActive) ||
-            (singleSelectionMenu != null && singleSelectionMenu.IsSelectionModeActive);
+    // IMPORTANT:
+    // Left Trigger should always cancel spawn mode if spawn mode is active.
+    // This must happen before blocking because of other modes.
+    if (leftTriggerDown && IsSpawnModeActive)
+    {
+        ExitSpawnMode();
+        UpdateVRMenu();
+        return;
+    }
 
-        if (!IsSpawnModeActive && otherModeActive)
-        {
-            UpdateVRMenu();
-            return;
-        }
+    // If another mode is active, do not let spawn mode open.
+    // But cancel above still works if spawn was already active.
+    if (!IsSpawnModeActive && otherModeActive)
+    {
+        return;
+    }
 
-        if (!menuOpen && !placementMode && !orientationMode)
-        {
-            if (leftTriggerDown)
-                menuOpen = true;
-
-            UpdateVRMenu();
-            return;
-        }
-
-        if (menuOpen)
-        {
-            HandleMenuMode(leftTriggerDown, rightTriggerDown, leftGripDown, rightGripDown);
-        }
-        else if (placementMode)
-        {
-            HandlePlacementMode(leftTriggerDown, rightTriggerDown);
-        }
-        else if (orientationMode)
-        {
-            HandleOrientationMode(leftTriggerDown, rightGripDown);
-        }
+    // Idle state: Left Trigger opens spawn menu
+    if (!menuOpen && !placementMode && !orientationMode)
+    {
+        if (leftTriggerDown)
+            menuOpen = true;
 
         UpdateVRMenu();
+        return;
     }
+
+    if (menuOpen)
+    {
+        HandleMenuMode(leftTriggerDown, rightTriggerDown, leftGripDown, rightGripDown);
+    }
+    else if (placementMode)
+    {
+        HandlePlacementMode(leftTriggerDown, rightTriggerDown);
+    }
+    else if (orientationMode)
+    {
+        HandleOrientationMode(leftTriggerDown, rightGripDown);
+    }
+
+    UpdateVRMenu();
+}
 
     private void HandleMenuMode(bool leftTriggerDown, bool rightTriggerDown, bool leftGripDown, bool rightGripDown)
     {
