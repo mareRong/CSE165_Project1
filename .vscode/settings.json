@@ -67,6 +67,6 @@
         "*.sln": "*.csproj",
         "*.slnx": "*.csproj"
     },
-    "dotnet.defaultSolution": "My project.slnx",
+    "dotnet.defaultSolution": "CSE165_Project1.slnx",
     "dotnet.enableWorkspaceBasedDevelopment": false
 }
