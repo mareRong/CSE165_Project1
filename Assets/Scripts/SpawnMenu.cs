@@ -154,21 +154,32 @@ public class SpawnMenu : MonoBehaviour
     private void HandleMenuMode(bool leftTriggerDown, bool rightTriggerDown, bool leftGripDown, bool rightGripDown)
     {
         if (leftTriggerDown)
-            selectedIndex = (selectedIndex - 1 + spawnPrefabs.Length) % spawnPrefabs.Length;
+            selectedIndex = (selectedIndex - 1 + GetSpawnMenuEntryCount()) % GetSpawnMenuEntryCount();
 
         if (rightTriggerDown)
-            selectedIndex = (selectedIndex + 1) % spawnPrefabs.Length;
+            selectedIndex = (selectedIndex + 1) % GetSpawnMenuEntryCount();
 
-        if (rightGripDown)
+        bool isBackEntry = selectedIndex == spawnPrefabs.Length;
+
+        if (rightGripDown && !isBackEntry)
             ToggleMultiSelect(spawnPrefabs[selectedIndex]);
 
         if (leftGripDown)
         {
-            if (multiSelectedPrefabs.Count > 0)
+            if (isBackEntry)
+            {
+                ExitSpawnMode();
+            }
+            else if (multiSelectedPrefabs.Count > 0)
                 StartMultiPlacement();
             else
                 StartSinglePlacement(spawnPrefabs[selectedIndex]);
         }
+    }
+
+    private int GetSpawnMenuEntryCount()
+    {
+        return spawnPrefabs.Length + 1;
     }
 
     private void HandlePlacementMode(bool leftTriggerDown, bool rightTriggerDown)
@@ -517,6 +528,8 @@ public class SpawnMenu : MonoBehaviour
 
             builder.AppendLine(cursor + check + spawnPrefabs[i].name);
         }
+
+        builder.AppendLine((selectedIndex == spawnPrefabs.Length ? "> " : "  ") + "Back");
 
         return builder.ToString();
     }
