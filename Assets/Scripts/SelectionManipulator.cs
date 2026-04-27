@@ -85,7 +85,7 @@ public class SelectionManipulator : MonoBehaviour
         HideIndicator();
 
         if (vrMenuCanvas != null)
-            vrMenuCanvas.SetActive(true);
+            vrMenuCanvas.SetActive(false);
     }
 
     void Update()
@@ -221,6 +221,12 @@ public class SelectionManipulator : MonoBehaviour
         if (vrMenuCanvas == null || vrMenuText == null)
             return;
 
+        if (!selectionMode && !manipulationMode)
+        {
+            vrMenuCanvas.SetActive(false);
+            return;
+        }
+
         vrMenuCanvas.SetActive(true);
 
         if (headsetCamera != null)
@@ -243,7 +249,7 @@ public class SelectionManipulator : MonoBehaviour
                 "Ray Selection Mode\n\n" +
                 "Hovering: " + hoverName + "\n\n" +
                 "Right Trigger = Select Object\n" +
-                "Left Trigger = Cancel / Exit";
+                "Left Trigger = Back";
         }
         else if (manipulationMode)
         {
@@ -253,15 +259,11 @@ public class SelectionManipulator : MonoBehaviour
                 "Current Mode: " + currentMode + "\n\n" +
                 "Hold Right Trigger = Manipulate\n" +
                 "Right Grip = Switch Move / Rotate / Scale\n" +
-                "Left Trigger = Finish / Exit";
+                "Left Trigger = Back";
         }
         else
         {
-            vrMenuText.text =
-                "Controls\n\n" +
-                "Left Trigger = Spawn\n" +
-                "Left Grip = Group Selection\n" +
-                "Right Grip = Ray Selection";
+            vrMenuCanvas.SetActive(false);
         }
     }
 
