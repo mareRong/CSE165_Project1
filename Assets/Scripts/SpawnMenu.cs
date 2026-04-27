@@ -80,6 +80,17 @@ public class SpawnMenu : MonoBehaviour
             vrMenuCanvas.SetActive(true);
     }
 
+    public void OpenSpawnMenuFromIdle()
+    {
+        if (!spawnModeEnabled || IsSpawnModeActive)
+            return;
+
+        if (spawnPrefabs == null || spawnPrefabs.Length == 0)
+            return;
+
+        menuOpen = true;
+    }
+
     void Update()
     {
         if (!leftDevice.isValid || !rightDevice.isValid)

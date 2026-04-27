@@ -393,6 +393,15 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         menuIndex = Mathf.Clamp(menuIndex, 0, GetMenuEntryCount() - 1);
     }
 
+    public void OpenGroupMenuFromIdle()
+    {
+        if (IsGroupModeActive)
+            return;
+
+        UpdateMenuObjects();
+        OpenMenu();
+    }
+
     private void CloseMenu()
     {
         menuOpen = false;

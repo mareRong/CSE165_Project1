@@ -8,6 +8,7 @@ public class SelectionManipulator : MonoBehaviour
     private float hoverBlockTimer = 0f;
 
     public SpawnMenu spawnMenu;
+    public GroupSelectionManipulationVR groupSelectionMenu;
 
     [Header("Ray Settings")]
     public Transform rayOrigin;
@@ -41,6 +42,7 @@ public class SelectionManipulator : MonoBehaviour
     private bool prevRightTrigger;
     private bool prevRightGrip;
     private bool prevLeftTrigger;
+    private bool prevLeftGrip;
 
     private bool selectionMode = false;
     private bool manipulationMode = false;
@@ -70,6 +72,9 @@ public class SelectionManipulator : MonoBehaviour
         if (spawnMenu == null)
             spawnMenu = FindObjectOfType<SpawnMenu>(true);
 
+        if (groupSelectionMenu == null)
+            groupSelectionMenu = FindObjectOfType<GroupSelectionManipulationVR>(true);
+
         if (rayOrigin == null)
             rayOrigin = transform;
 
@@ -92,7 +97,8 @@ public class SelectionManipulator : MonoBehaviour
             out bool rightTriggerDown,
             out bool rightTriggerHeld,
             out bool rightGripDown,
-            out bool leftTriggerDown
+            out bool leftTriggerDown,
+            out bool leftGripDown
         );
 
         if (!IsSelectionModeActive && spawnMenu != null && spawnMenu.IsSpawnModeActive)
@@ -104,6 +110,20 @@ public class SelectionManipulator : MonoBehaviour
         // Idle: Right Grip starts ray selection
         if (!selectionMode && !manipulationMode)
         {
+            if (leftTriggerDown && spawnMenu != null)
+            {
+                spawnMenu.OpenSpawnMenuFromIdle();
+                UpdateVRMenu();
+                return;
+            }
+
+            if (leftGripDown && groupSelectionMenu != null)
+            {
+                groupSelectionMenu.OpenGroupMenuFromIdle();
+                UpdateVRMenu();
+                return;
+            }
+
             if (rightGripDown)
                 StartSelectionMode();
 
@@ -585,12 +605,14 @@ public class SelectionManipulator : MonoBehaviour
         out bool rightTriggerDown,
         out bool rightTriggerHeld,
         out bool rightGripDown,
-        out bool leftTriggerDown
+        out bool leftTriggerDown,
+        out bool leftGripDown
     )
     {
         bool rightTrigger = false;
         bool rightGrip = false;
         bool leftTrigger = false;
+        bool leftGrip = false;
 
         if (rightDevice.isValid)
         {
@@ -601,15 +623,18 @@ public class SelectionManipulator : MonoBehaviour
         if (leftDevice.isValid)
         {
             leftDevice.TryGetFeatureValue(CommonUsages.triggerButton, out leftTrigger);
+            leftDevice.TryGetFeatureValue(CommonUsages.gripButton, out leftGrip);
         }
 
         rightTriggerDown = rightTrigger && !prevRightTrigger;
         rightTriggerHeld = rightTrigger;
         rightGripDown = rightGrip && !prevRightGrip;
         leftTriggerDown = leftTrigger && !prevLeftTrigger;
+        leftGripDown = leftGrip && !prevLeftGrip;
 
         prevRightTrigger = rightTrigger;
         prevRightGrip = rightGrip;
         prevLeftTrigger = leftTrigger;
+        prevLeftGrip = leftGrip;
     }
 }
