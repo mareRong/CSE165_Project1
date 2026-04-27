@@ -596,28 +596,44 @@ public class GroupSelectionManipulationVR : MonoBehaviour
     }
 
     private void ApplyMove()
+{
+    if (selectionHand == null || selectedObjects.Count == 0)
+        return;
+
+    Ray ray = new Ray(selectionHand.position, selectionHand.forward);
+    Vector3 targetPoint;
+
+    RaycastHit[] hits = Physics.RaycastAll(ray, rayMoveDistance, selectableMask);
+    System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+
+    bool foundValidHit = false;
+    targetPoint = selectionHand.position + selectionHand.forward * fallbackMoveDistance;
+
+    for (int i = 0; i < hits.Length; i++)
     {
-        if (selectionHand == null || selectedObjects.Count == 0)
-            return;
+        SelectableObject hitSelectable = hits[i].collider.GetComponentInParent<SelectableObject>();
 
-        Ray ray = new Ray(selectionHand.position, selectionHand.forward);
+        // Ignore the objects currently being moved
+        if (hitSelectable != null && selectedObjects.Contains(hitSelectable))
+            continue;
 
-        Vector3 targetPoint;
-
-        if (Physics.Raycast(ray, out RaycastHit hit, rayMoveDistance, selectableMask))
-            targetPoint = hit.point;
-        else
-            targetPoint = selectionHand.position + selectionHand.forward * fallbackMoveDistance;
-
-        Vector3 groupPivot = GetGroupPivot();
-        Vector3 moveDelta = targetPoint - groupPivot;
-
-        for (int i = 0; i < selectedObjects.Count; i++)
-        {
-            if (selectedObjects[i] != null)
-                selectedObjects[i].transform.position += moveDelta;
-        }
+        targetPoint = hits[i].point;
+        foundValidHit = true;
+        break;
     }
+
+    if (!foundValidHit)
+        targetPoint = selectionHand.position + selectionHand.forward * fallbackMoveDistance;
+
+    Vector3 groupPivot = GetGroupPivot();
+    Vector3 moveDelta = targetPoint - groupPivot;
+
+    for (int i = 0; i < selectedObjects.Count; i++)
+    {
+        if (selectedObjects[i] != null)
+            selectedObjects[i].transform.position += moveDelta;
+    }
+}
 
     private void ApplyRotation()
     {
