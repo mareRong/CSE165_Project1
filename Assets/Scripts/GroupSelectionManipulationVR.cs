@@ -6,6 +6,8 @@ using UnityEngine.XR;
 
 public class GroupSelectionManipulationVR : MonoBehaviour
 {
+    private const string PreferredIndicatorShaderName = "Universal Render Pipeline/Unlit";
+
     public bool IsGroupModeActive => menuOpen || manipulationMode;
     public SpawnMenu spawnMenu;
     public SelectionManipulator singleSelectionMenu;
@@ -31,6 +33,9 @@ public class GroupSelectionManipulationVR : MonoBehaviour
     public float selectorDistance = 0.65f;
     public float selectorRadius = 1.1f;
 
+    [Header("Indicator")]
+    public float indicatorLineWidth = 0.01f;
+
     [Header("VR Menu Canvas")]
     public GameObject vrMenuCanvas;
     public TextMeshProUGUI vrMenuText;
@@ -53,6 +58,7 @@ public class GroupSelectionManipulationVR : MonoBehaviour
     private readonly List<SelectableObject> selectedObjects = new List<SelectableObject>();
     private readonly List<SelectableObject> menuObjects = new List<SelectableObject>();
     private readonly Dictionary<Rigidbody, RigidbodyState> rigidbodyStates = new Dictionary<Rigidbody, RigidbodyState>();
+    private readonly List<LineRenderer> selectionLines = new List<LineRenderer>();
 
     private InputDevice leftDevice;
     private InputDevice rightDevice;
@@ -71,7 +77,6 @@ public class GroupSelectionManipulationVR : MonoBehaviour
     private GroupManipulationMode currentMode = GroupManipulationMode.Move;
     private Vector3 lastHandPosition;
     private Quaternion lastHandRotation;
-
     private void Start()
     {
         RefreshDevices();
@@ -107,7 +112,19 @@ public class GroupSelectionManipulationVR : MonoBehaviour
             (singleSelectionMenu != null && singleSelectionMenu.IsSelectionModeActive);
 
         if (!IsGroupModeActive && otherModeActive)
+        {
+            HideIndicator();
             return;
+        }
+
+        if (!menuOpen && !manipulationMode)
+        {
+            HideIndicator();
+        }
+        else
+        {
+            UpdateIndicator();
+        }
 
         if (manipulationMode)
         {
@@ -224,6 +241,82 @@ public class GroupSelectionManipulationVR : MonoBehaviour
             rightDevice.TryGetFeatureValue(CommonUsages.triggerButton, out rightTriggerPressed);
             rightDevice.TryGetFeatureValue(CommonUsages.gripButton, out rightGripPressed);
         }
+    }
+
+    private void UpdateIndicator()
+    {
+        Vector3 center = GetSelectionCenter();
+        UpdateSelectionLines(center);
+    }
+
+    private void HideIndicator()
+    {
+        for (int i = 0; i < selectionLines.Count; i++)
+        {
+            if (selectionLines[i] != null)
+                selectionLines[i].gameObject.SetActive(false);
+        }
+    }
+
+    private void UpdateSelectionLines(Vector3 center)
+    {
+        EnsureSelectionLinePool(selectedObjects.Count);
+
+        int lineIndex = 0;
+        for (int i = 0; i < selectedObjects.Count; i++)
+        {
+            SelectableObject selectable = selectedObjects[i];
+            if (selectable == null)
+                continue;
+
+            LineRenderer line = selectionLines[lineIndex];
+            line.gameObject.SetActive(true);
+            line.positionCount = 2;
+            line.SetPosition(0, center);
+            line.SetPosition(1, selectable.transform.position);
+            lineIndex++;
+        }
+
+        for (int i = lineIndex; i < selectionLines.Count; i++)
+        {
+            if (selectionLines[i] != null)
+                selectionLines[i].gameObject.SetActive(false);
+        }
+    }
+
+    private void EnsureSelectionLinePool(int targetCount)
+    {
+        while (selectionLines.Count < targetCount)
+            selectionLines.Add(CreateSelectionLine(selectionLines.Count));
+    }
+
+    private LineRenderer CreateSelectionLine(int index)
+    {
+        GameObject lineObject = new GameObject("GroupSelectionLine" + index);
+        lineObject.transform.SetParent(transform, false);
+
+        LineRenderer line = lineObject.AddComponent<LineRenderer>();
+        line.useWorldSpace = true;
+        line.positionCount = 2;
+        line.loop = false;
+        line.alignment = LineAlignment.View;
+        line.widthMultiplier = indicatorLineWidth;
+        line.numCapVertices = 4;
+        line.numCornerVertices = 4;
+        line.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        line.receiveShadows = false;
+        line.textureMode = LineTextureMode.Stretch;
+        line.startColor = selectedColor;
+        line.endColor = selectedColor;
+
+        Shader shader = Shader.Find("Sprites/Default");
+        if (shader == null)
+            shader = Shader.Find(PreferredIndicatorShaderName);
+        if (shader != null)
+            line.sharedMaterial = new Material(shader);
+
+        lineObject.SetActive(false);
+        return line;
     }
 
     private bool LeftTriggerDown()
