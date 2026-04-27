@@ -668,6 +668,9 @@ public class GroupSelectionManipulationVR : MonoBehaviour
 
     private void OnGUI()
     {
+        if (!menuOpen && !manipulationMode)
+            return;
+
         float width = 460f;
         float height = 150f;
         float x = Screen.width - width - 20f;
