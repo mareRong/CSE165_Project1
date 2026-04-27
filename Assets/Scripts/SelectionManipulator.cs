@@ -25,7 +25,6 @@ public class SelectionManipulator : MonoBehaviour
     public Vector3 menuOffset = new Vector3(0f, -0.15f, 0f);
 
     [Header("Manipulation Settings")]
-    public float moveHeightOffset = 0.7f;
     public float defaultMoveDistance = 3f;
     public float scaleSpeed = 1.5f;
     public float minScale = 0.2f;
@@ -44,7 +43,6 @@ public class SelectionManipulator : MonoBehaviour
 
     private bool selectionMode = false;
     private bool manipulationMode = false;
-    private bool wasManipulating = false;
 
     private GameObject hoveredObject;
     private Renderer[] hoveredRenderers;
@@ -52,6 +50,8 @@ public class SelectionManipulator : MonoBehaviour
     private GameObject selectedObject;
     private Renderer[] selectedRenderers;
     private MaterialPropertyBlock[] selectedOriginalBlocks;
+
+    private float grabDistance = 3f;
 
     private enum ManipulationMode
     {
@@ -90,7 +90,6 @@ public class SelectionManipulator : MonoBehaviour
         ReadButtons(
             out bool rightTriggerDown,
             out bool rightTriggerHeld,
-            out bool rightTriggerReleased,
             out bool rightGripDown,
             out bool leftTriggerDown
         );
@@ -101,6 +100,7 @@ public class SelectionManipulator : MonoBehaviour
             return;
         }
 
+        // Idle: Right Grip starts ray selection
         if (!selectionMode && !manipulationMode)
         {
             if (rightGripDown)
@@ -110,6 +110,7 @@ public class SelectionManipulator : MonoBehaviour
             return;
         }
 
+        // Left Trigger exits ray selection / manipulation
         if (leftTriggerDown)
         {
             ExitRaySelection();
@@ -117,6 +118,7 @@ public class SelectionManipulator : MonoBehaviour
             return;
         }
 
+        // Ray selection mode
         if (selectionMode && !manipulationMode)
         {
             UpdateIndicator();
@@ -132,10 +134,12 @@ public class SelectionManipulator : MonoBehaviour
             return;
         }
 
+        // Manipulation mode
         if (manipulationMode && selectedObject != null)
         {
             UpdateIndicator();
 
+            // Right Grip cycles Move -> Rotate -> Scale
             if (rightGripDown)
             {
                 CycleManipulationMode();
@@ -143,25 +147,11 @@ public class SelectionManipulator : MonoBehaviour
                 return;
             }
 
-            // Move happens once per trigger press
-            if (rightTriggerDown && currentMode == ManipulationMode.Move)
+            // Hold Right Trigger to manipulate.
+            // Releasing trigger does NOT exit manipulation mode.
+            if (rightTriggerHeld)
             {
                 ManipulateSelectedObject();
-                wasManipulating = true;
-            }
-
-            // Rotate and scale happen while holding trigger
-            if (rightTriggerHeld && currentMode != ManipulationMode.Move)
-            {
-                ManipulateSelectedObject();
-                wasManipulating = true;
-            }
-
-            if (rightTriggerReleased && wasManipulating)
-            {
-                FinishManipulation();
-                UpdateVRMenu();
-                return;
             }
 
             UpdateVRMenu();
@@ -172,7 +162,6 @@ public class SelectionManipulator : MonoBehaviour
     {
         selectionMode = true;
         manipulationMode = false;
-        wasManipulating = false;
         currentMode = ManipulationMode.Move;
         ShowIndicator();
     }
@@ -184,23 +173,13 @@ public class SelectionManipulator : MonoBehaviour
 
         selectionMode = false;
         manipulationMode = true;
-        wasManipulating = false;
         currentMode = ManipulationMode.Move;
+
+        grabDistance = Vector3.Distance(rayOrigin.position, selectedObject.transform.position);
+        grabDistance = Mathf.Clamp(grabDistance, 0.5f, maxRayDistance);
 
         ClearHoverHighlight();
         ShowIndicator();
-    }
-
-    private void FinishManipulation()
-    {
-        DeselectObject();
-
-        selectionMode = false;
-        manipulationMode = false;
-        wasManipulating = false;
-
-        ClearHoverHighlight();
-        HideIndicator();
     }
 
     private void ExitRaySelection()
@@ -212,7 +191,6 @@ public class SelectionManipulator : MonoBehaviour
 
         selectionMode = false;
         manipulationMode = false;
-        wasManipulating = false;
 
         HideIndicator();
     }
@@ -252,10 +230,9 @@ public class SelectionManipulator : MonoBehaviour
                 "Manipulation Mode\n\n" +
                 "Selected: " + selectedName + "\n" +
                 "Current Mode: " + currentMode + "\n\n" +
-                "Move Mode: Press Right Trigger Once\n" +
-                "Rotate/Scale: Hold Right Trigger\n" +
+                "Hold Right Trigger = Manipulate\n" +
                 "Right Grip = Switch Move / Rotate / Scale\n" +
-                "Left Trigger = Cancel / Exit";
+                "Left Trigger = Finish / Exit";
         }
         else
         {
@@ -499,9 +476,6 @@ public class SelectionManipulator : MonoBehaviour
 
     private void CycleManipulationMode()
     {
-        // Stop current manipulation when switching modes
-        wasManipulating = false;
-
         if (currentMode == ManipulationMode.Move)
             currentMode = ManipulationMode.Rotate;
         else if (currentMode == ManipulationMode.Rotate)
@@ -513,34 +487,25 @@ public class SelectionManipulator : MonoBehaviour
     private void ManipulateSelectedObject()
     {
         if (currentMode == ManipulationMode.Move)
-            MoveObject();
+            MoveObjectWithRay();
         else if (currentMode == ManipulationMode.Rotate)
-            RotateObject();
+            RotateObjectWithRay();
         else if (currentMode == ManipulationMode.Scale)
-            ScaleObject();
+            ScaleObjectUpward();
     }
 
-    private void MoveObject()
+    private void MoveObjectWithRay()
     {
         if (rayOrigin == null || selectedObject == null)
             return;
 
-        Ray ray = new Ray(rayOrigin.position, rayOrigin.forward);
-        Vector3 targetPosition;
+        Vector3 targetPosition =
+            rayOrigin.position + rayOrigin.forward * grabDistance;
 
-        if (Physics.Raycast(ray, out RaycastHit hit, maxRayDistance))
-        {
-            targetPosition = hit.point;
-        }
-        else
-        {
-            targetPosition = rayOrigin.position + rayOrigin.forward * defaultMoveDistance;
-        }
-
-        selectedObject.transform.position = targetPosition + Vector3.up * moveHeightOffset;
+        selectedObject.transform.position = targetPosition;
     }
 
-    private void RotateObject()
+    private void RotateObjectWithRay()
     {
         if (rayOrigin == null || selectedObject == null)
             return;
@@ -556,10 +521,13 @@ public class SelectionManipulator : MonoBehaviour
         selectedObject.transform.rotation = Quaternion.Euler(0f, yRotation, 0f);
     }
 
-    private void ScaleObject()
+    private void ScaleObjectUpward()
     {
         if (rayOrigin == null || selectedObject == null)
             return;
+
+        Bounds beforeBounds = GetObjectBounds(selectedObject);
+        float bottomYBefore = beforeBounds.min.y;
 
         Vector3 currentScale = selectedObject.transform.localScale;
 
@@ -573,6 +541,30 @@ public class SelectionManipulator : MonoBehaviour
         currentScale.z = Mathf.Clamp(currentScale.z, minScale, maxScale);
 
         selectedObject.transform.localScale = currentScale;
+
+        Bounds afterBounds = GetObjectBounds(selectedObject);
+        float bottomYAfter = afterBounds.min.y;
+
+        float yCorrection = bottomYBefore - bottomYAfter;
+        selectedObject.transform.position += new Vector3(0f, yCorrection, 0f);
+    }
+
+    private Bounds GetObjectBounds(GameObject obj)
+    {
+        Renderer[] renderers = obj.GetComponentsInChildren<Renderer>();
+
+        if (renderers.Length == 0)
+            return new Bounds(obj.transform.position, Vector3.zero);
+
+        Bounds bounds = renderers[0].bounds;
+
+        for (int i = 1; i < renderers.Length; i++)
+        {
+            if (renderers[i] != null)
+                bounds.Encapsulate(renderers[i].bounds);
+        }
+
+        return bounds;
     }
 
     private void RefreshDevices()
@@ -584,7 +576,6 @@ public class SelectionManipulator : MonoBehaviour
     private void ReadButtons(
         out bool rightTriggerDown,
         out bool rightTriggerHeld,
-        out bool rightTriggerReleased,
         out bool rightGripDown,
         out bool leftTriggerDown
     )
@@ -606,8 +597,6 @@ public class SelectionManipulator : MonoBehaviour
 
         rightTriggerDown = rightTrigger && !prevRightTrigger;
         rightTriggerHeld = rightTrigger;
-        rightTriggerReleased = !rightTrigger && prevRightTrigger;
-
         rightGripDown = rightGrip && !prevRightGrip;
         leftTriggerDown = leftTrigger && !prevLeftTrigger;
 
