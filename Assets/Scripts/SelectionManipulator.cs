@@ -183,6 +183,8 @@ public class SelectionManipulator : MonoBehaviour
         manipulationMode = false;
         currentMode = ManipulationMode.Move;
         ShowIndicator();
+        ShowRayMenuCanvas();
+        UpdateVRMenu();
     }
 
     private void StartManipulationMode()
@@ -199,6 +201,8 @@ public class SelectionManipulator : MonoBehaviour
 
         ClearHoverHighlight();
         ShowIndicator();
+        ShowRayMenuCanvas();
+        UpdateVRMenu();
     }
 
     private void ExitRaySelection()
@@ -214,6 +218,19 @@ public class SelectionManipulator : MonoBehaviour
         hoverBlockTimer = 0.2f;
 
         HideIndicator();
+        HideRayMenuCanvas();
+    }
+
+    private void ShowRayMenuCanvas()
+    {
+        if (vrMenuCanvas != null)
+            vrMenuCanvas.SetActive(true);
+    }
+
+    private void HideRayMenuCanvas()
+    {
+        if (vrMenuCanvas != null)
+            vrMenuCanvas.SetActive(false);
     }
 
     private void UpdateVRMenu()
@@ -223,11 +240,11 @@ public class SelectionManipulator : MonoBehaviour
 
         if (!selectionMode && !manipulationMode)
         {
-            vrMenuCanvas.SetActive(false);
+            HideRayMenuCanvas();
             return;
         }
 
-        vrMenuCanvas.SetActive(true);
+        ShowRayMenuCanvas();
 
         if (headsetCamera != null)
         {
@@ -263,7 +280,7 @@ public class SelectionManipulator : MonoBehaviour
         }
         else
         {
-            vrMenuCanvas.SetActive(false);
+            HideRayMenuCanvas();
         }
     }
 
