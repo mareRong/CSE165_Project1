@@ -202,25 +202,23 @@ public class SpawnMenu : MonoBehaviour
     }
 
     private void HandleOrientationMode(bool leftTriggerDown, bool rightGripDown)
+{
+    if (leftTriggerDown)
     {
-        if (leftTriggerDown)
-        {
-            orientationMode = false;
-            placementMode = true;
-            return;
-        }
-
-        if (rightTriggerHeld)
-        {
-            currentYRotation = GetControllerYaw();
-
-            if (previewObject != null)
-                previewObject.transform.rotation = Quaternion.Euler(0f, currentYRotation, 0f);
-        }
-
-        if (rightGripDown)
-            ConfirmSpawn();
+        orientationMode = false;
+        placementMode = true;
+        return;
     }
+
+    if (rightTriggerHeld)
+    {
+        currentYRotation = GetControllerYaw();
+        ApplyPreviewRotation();
+    }
+
+    if (rightGripDown)
+        ConfirmSpawn();
+}
 
     private void StartSinglePlacement(GameObject prefab)
     {
@@ -259,35 +257,31 @@ public class SpawnMenu : MonoBehaviour
     }
 
     private void UpdatePreviewPosition()
+{
+    if (previewObject == null || rayOrigin == null)
+        return;
+
+    Ray ray = new Ray(rayOrigin.position, rayOrigin.forward);
+    Vector3 targetPoint;
+
+    if (Physics.Raycast(ray, out RaycastHit hit, maxRayDistance, placementMask))
+        targetPoint = hit.point;
+    else
+        targetPoint = rayOrigin.position + rayOrigin.forward * maxSpawnRange;
+
+    Vector3 fromPlayer = targetPoint - rayOrigin.position;
+
+    if (fromPlayer.magnitude > maxSpawnRange)
     {
-        if (previewObject == null || rayOrigin == null)
-            return;
-
-        Ray ray = new Ray(rayOrigin.position, rayOrigin.forward);
-        Vector3 targetPoint;
-
-        if (Physics.Raycast(ray, out RaycastHit hit, maxRayDistance, placementMask))
-        {
-            targetPoint = hit.point;
-        }
-        else
-        {
-            targetPoint = rayOrigin.position + rayOrigin.forward * maxSpawnRange;
-        }
-
-        Vector3 fromPlayer = targetPoint - rayOrigin.position;
-
-        if (fromPlayer.magnitude > maxSpawnRange)
-        {
-            fromPlayer = fromPlayer.normalized * maxSpawnRange;
-            targetPoint = rayOrigin.position + fromPlayer;
-        }
-
-        previewObject.SetActive(true);
-        previewObject.transform.position = targetPoint + Vector3.up * spawnHeightOffset;
-        previewObject.transform.rotation = Quaternion.Euler(0f, currentYRotation, 0f);
+        fromPlayer = fromPlayer.normalized * maxSpawnRange;
+        targetPoint = rayOrigin.position + fromPlayer;
     }
 
+    previewObject.SetActive(true);
+    previewObject.transform.position = targetPoint + Vector3.up * spawnHeightOffset;
+
+    ApplyPreviewRotation();
+}
     private void ConfirmSpawn()
     {
         if (previewObject == null)
@@ -316,6 +310,30 @@ public class SpawnMenu : MonoBehaviour
         menuOpen = false;
         suppressOtherModeEntryUntil = Time.time + 0.2f;
     }
+    private void ApplyPreviewRotation()
+{
+    if (previewObject == null)
+        return;
+
+    Quaternion targetRotation = Quaternion.Euler(0f, currentYRotation, 0f);
+
+    // Multi-spawn: rotate each child in place, not the parent midpoint
+    if (previewObject.name == "Multi Spawn Preview")
+    {
+        previewObject.transform.rotation = Quaternion.identity;
+
+        for (int i = 0; i < previewObject.transform.childCount; i++)
+        {
+            Transform child = previewObject.transform.GetChild(i);
+            child.rotation = targetRotation;
+        }
+    }
+    // Single spawn: rotate the object normally
+    else
+    {
+        previewObject.transform.rotation = targetRotation;
+    }
+}
 
     private void UpdateVRMenu()
     {

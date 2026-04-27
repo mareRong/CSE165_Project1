@@ -51,6 +51,8 @@ public class GroupSelectionManipulationVR : MonoBehaviour
     public float duplicateOffset = 0.35f;
     public float minObjectScale = 0.1f;
     public float maxObjectScale = 4f;
+    public float rayMoveDistance = 20f;
+    public float fallbackMoveDistance = 3f;
 
     [Header("Menu Colors")]
     public Color selectedColor = new Color(0.2f, 1f, 0.45f, 1f);
@@ -62,10 +64,12 @@ public class GroupSelectionManipulationVR : MonoBehaviour
 
     private InputDevice leftDevice;
     private InputDevice rightDevice;
+
     private bool prevLeftTriggerPressed;
     private bool prevRightTriggerPressed;
     private bool prevLeftGripPressed;
     private bool prevRightGripPressed;
+
     private bool leftTriggerPressed;
     private bool rightTriggerPressed;
     private bool leftGripPressed;
@@ -74,9 +78,12 @@ public class GroupSelectionManipulationVR : MonoBehaviour
     private bool menuOpen;
     private int menuIndex;
     private bool manipulationMode;
+
     private GroupManipulationMode currentMode = GroupManipulationMode.Move;
+
     private Vector3 lastHandPosition;
     private Quaternion lastHandRotation;
+
     private void Start()
     {
         RefreshDevices();
@@ -118,13 +125,9 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         }
 
         if (!menuOpen && !manipulationMode)
-        {
             HideIndicator();
-        }
         else
-        {
             UpdateIndicator();
-        }
 
         if (manipulationMode)
         {
@@ -180,6 +183,16 @@ public class GroupSelectionManipulationVR : MonoBehaviour
             return;
         }
 
+        // Move only happens while holding Right Trigger.
+        // This prevents objects from moving with the player's hand/body automatically.
+        if (currentMode == GroupManipulationMode.Move)
+        {
+            if (rightTriggerPressed)
+                ApplyMove();
+
+            return;
+        }
+
         ApplyManipulation();
     }
 
@@ -225,6 +238,7 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         prevRightTriggerPressed = rightTriggerPressed;
         prevLeftGripPressed = leftGripPressed;
         prevRightGripPressed = rightGripPressed;
+
         leftTriggerPressed = false;
         rightTriggerPressed = false;
         leftGripPressed = false;
@@ -263,6 +277,7 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         EnsureSelectionLinePool(selectedObjects.Count);
 
         int lineIndex = 0;
+
         for (int i = 0; i < selectedObjects.Count; i++)
         {
             SelectableObject selectable = selectedObjects[i];
@@ -312,6 +327,7 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         Shader shader = Shader.Find("Sprites/Default");
         if (shader == null)
             shader = Shader.Find(PreferredIndicatorShaderName);
+
         if (shader != null)
             line.sharedMaterial = new Material(shader);
 
@@ -344,9 +360,11 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         menuObjects.Clear();
 
         SelectableObject[] allSelectables = FindObjectsOfType<SelectableObject>(true);
+
         for (int i = 0; i < allSelectables.Length; i++)
         {
             SelectableObject selectable = allSelectables[i];
+
             if (selectable == null || !selectable.gameObject.activeInHierarchy)
                 continue;
 
@@ -370,6 +388,7 @@ public class GroupSelectionManipulationVR : MonoBehaviour
     private int CompareSelectableObjects(SelectableObject a, SelectableObject b)
     {
         int nameCompare = string.Compare(a.name, b.name, System.StringComparison.Ordinal);
+
         if (nameCompare != 0)
             return nameCompare;
 
@@ -410,6 +429,7 @@ public class GroupSelectionManipulationVR : MonoBehaviour
     private void AdvanceMenuIndex(int direction)
     {
         int entryCount = GetMenuEntryCount();
+
         if (entryCount == 0)
             return;
 
@@ -419,6 +439,7 @@ public class GroupSelectionManipulationVR : MonoBehaviour
     private void ToggleFocusedSelection()
     {
         int objectCount = menuObjects.Count;
+
         if (objectCount == 0 || menuIndex >= objectCount)
             return;
 
@@ -428,6 +449,7 @@ public class GroupSelectionManipulationVR : MonoBehaviour
     private void ConfirmMenuSelection()
     {
         CloseMenu();
+
         if (selectedObjects.Count > 0)
             BeginManipulation();
     }
@@ -491,13 +513,19 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         CloseMenu();
         manipulationMode = true;
         currentMode = GroupManipulationMode.Move;
-        lastHandPosition = selectionHand.position;
-        lastHandRotation = selectionHand.rotation;
+
+        if (selectionHand != null)
+        {
+            lastHandPosition = selectionHand.position;
+            lastHandRotation = selectionHand.rotation;
+        }
 
         rigidbodyStates.Clear();
+
         for (int i = 0; i < selectedObjects.Count; i++)
         {
             Rigidbody rb = selectedObjects[i].GetComponent<Rigidbody>();
+
             if (rb == null || rigidbodyStates.ContainsKey(rb))
                 continue;
 
@@ -547,8 +575,11 @@ public class GroupSelectionManipulationVR : MonoBehaviour
             currentMode = GroupManipulationMode.Move;
         }
 
-        lastHandPosition = selectionHand.position;
-        lastHandRotation = selectionHand.rotation;
+        if (selectionHand != null)
+        {
+            lastHandPosition = selectionHand.position;
+            lastHandRotation = selectionHand.rotation;
+        }
     }
 
     private void ApplyManipulation()
@@ -557,29 +588,35 @@ public class GroupSelectionManipulationVR : MonoBehaviour
             return;
 
         if (currentMode == GroupManipulationMode.Move)
-        {
             ApplyMove();
-        }
         else if (currentMode == GroupManipulationMode.Rotate)
-        {
             ApplyRotation();
-        }
         else
-        {
             ApplyScale();
-        }
     }
 
     private void ApplyMove()
     {
-        Vector3 delta = selectionHand.position - lastHandPosition;
-        if (delta.sqrMagnitude < 0.000001f)
+        if (selectionHand == null || selectedObjects.Count == 0)
             return;
 
-        for (int i = 0; i < selectedObjects.Count; i++)
-            selectedObjects[i].transform.position += delta;
+        Ray ray = new Ray(selectionHand.position, selectionHand.forward);
 
-        lastHandPosition = selectionHand.position;
+        Vector3 targetPoint;
+
+        if (Physics.Raycast(ray, out RaycastHit hit, rayMoveDistance, selectableMask))
+            targetPoint = hit.point;
+        else
+            targetPoint = selectionHand.position + selectionHand.forward * fallbackMoveDistance;
+
+        Vector3 groupPivot = GetGroupPivot();
+        Vector3 moveDelta = targetPoint - groupPivot;
+
+        for (int i = 0; i < selectedObjects.Count; i++)
+        {
+            if (selectedObjects[i] != null)
+                selectedObjects[i].transform.position += moveDelta;
+        }
     }
 
     private void ApplyRotation()
@@ -591,10 +628,12 @@ public class GroupSelectionManipulationVR : MonoBehaviour
             return;
 
         float angle = Vector3.SignedAngle(previousForward, currentForward, Vector3.up);
+
         if (Mathf.Abs(angle) < 0.05f)
             return;
 
         Quaternion deltaRotation = Quaternion.AngleAxis(angle, Vector3.up);
+
         for (int i = 0; i < selectedObjects.Count; i++)
         {
             Transform target = selectedObjects[i].transform;
@@ -618,11 +657,14 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         for (int i = 0; i < selectedObjects.Count; i++)
         {
             Transform target = selectedObjects[i].transform;
+
             float originalBottom = GetObjectBottom(target);
+
             Vector3 scaled = target.localScale * scaleFactor;
             scaled.x = Mathf.Clamp(scaled.x, minObjectScale, maxObjectScale);
             scaled.y = Mathf.Clamp(scaled.y, minObjectScale, maxObjectScale);
             scaled.z = Mathf.Clamp(scaled.z, minObjectScale, maxObjectScale);
+
             target.localScale = scaled;
 
             float scaledBottom = GetObjectBottom(target);
@@ -638,10 +680,12 @@ public class GroupSelectionManipulationVR : MonoBehaviour
             return 0f;
 
         Renderer[] renderers = target.GetComponentsInChildren<Renderer>(true);
+
         if (renderers.Length == 0)
             return target.position.y;
 
         Bounds bounds = renderers[0].bounds;
+
         for (int i = 1; i < renderers.Length; i++)
         {
             if (renderers[i] != null)
@@ -658,10 +702,17 @@ public class GroupSelectionManipulationVR : MonoBehaviour
 
         List<SelectableObject> originals = new List<SelectableObject>(selectedObjects);
         List<SelectableObject> duplicates = new List<SelectableObject>();
-        Vector3 offset = selectionHand != null ? selectionHand.right * duplicateOffset : Vector3.right * duplicateOffset;
+
+        Vector3 offset =
+            selectionHand != null
+                ? selectionHand.right * duplicateOffset
+                : Vector3.right * duplicateOffset;
 
         for (int i = 0; i < originals.Count; i++)
-            originals[i].SetHighlight(false, SelectableObject.HighlightChannel.GroupSelection);
+        {
+            if (originals[i] != null)
+                originals[i].SetHighlight(false, SelectableObject.HighlightChannel.GroupSelection);
+        }
 
         for (int i = 0; i < originals.Count; i++)
         {
@@ -674,6 +725,7 @@ public class GroupSelectionManipulationVR : MonoBehaviour
             clone.transform.localScale = originals[i].transform.localScale;
 
             SelectableObject selectable = clone.GetComponent<SelectableObject>();
+
             if (selectable == null)
                 selectable = clone.AddComponent<SelectableObject>();
 
@@ -687,6 +739,7 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         }
 
         ClearSelection();
+
         for (int i = 0; i < duplicates.Count; i++)
             AddSelection(duplicates[i]);
     }
@@ -697,10 +750,21 @@ public class GroupSelectionManipulationVR : MonoBehaviour
             return GetSelectionCenter();
 
         Vector3 sum = Vector3.zero;
-        for (int i = 0; i < selectedObjects.Count; i++)
-            sum += selectedObjects[i].transform.position;
+        int count = 0;
 
-        return sum / selectedObjects.Count;
+        for (int i = 0; i < selectedObjects.Count; i++)
+        {
+            if (selectedObjects[i] == null)
+                continue;
+
+            sum += selectedObjects[i].transform.position;
+            count++;
+        }
+
+        if (count == 0)
+            return GetSelectionCenter();
+
+        return sum / count;
     }
 
     private void UpdateVRMenu()
@@ -737,7 +801,12 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         {
             vrMenuText.text =
                 "Group Manipulation Mode\n\n" +
-                "Current Mode: " + currentMode + "\n" +
+                "Current Mode: " + currentMode + "\n";
+
+            if (currentMode == GroupManipulationMode.Move)
+                vrMenuText.text += "Hold Right Trigger = Move With Ray\n";
+
+            vrMenuText.text +=
                 "Left Trigger = Next Mode\n" +
                 "Left Grip = Exit Manipulation";
         }
@@ -766,11 +835,14 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         }
 
         int visibleRows = Mathf.Min(objectCount, Mathf.Max(1, maxVisibleRows));
+
         int scrollStart = 0;
+
         if (objectCount > visibleRows)
             scrollStart = Mathf.Clamp(menuIndex - visibleRows + 1, 0, objectCount - visibleRows);
 
         int scrollEnd = Mathf.Min(objectCount, scrollStart + visibleRows);
+
         for (int i = scrollStart; i < scrollEnd; i++)
         {
             SelectableObject selectable = menuObjects[i];
@@ -779,11 +851,13 @@ public class GroupSelectionManipulationVR : MonoBehaviour
 
             string cursor = isFocused ? "> " : "  ";
             string check = isSelected ? "[X] " : "[ ] ";
+
             builder.AppendLine(cursor + check + selectable.name);
         }
 
         bool confirmFocused = menuIndex == objectCount;
         string confirmCursor = confirmFocused ? "> " : "  ";
+
         builder.AppendLine(confirmCursor + "Start Group Edit");
         builder.AppendLine();
         builder.AppendLine("Showing " + (scrollStart + 1) + "-" + scrollEnd + " of " + objectCount);
@@ -791,5 +865,4 @@ public class GroupSelectionManipulationVR : MonoBehaviour
 
         return builder.ToString();
     }
-
 }
