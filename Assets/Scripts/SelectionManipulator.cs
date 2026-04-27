@@ -101,7 +101,7 @@ public class SelectionManipulator : MonoBehaviour
             out bool leftGripDown
         );
 
-        if (!IsSelectionModeActive && spawnMenu != null && spawnMenu.IsSpawnModeActive)
+        if (!IsSelectionModeActive && OtherMenuOwnsVRMenu())
         {
             UpdateVRMenu();
             return;
@@ -223,6 +223,12 @@ public class SelectionManipulator : MonoBehaviour
         if (vrMenuCanvas == null || vrMenuText == null)
             return;
 
+        if (!IsSelectionModeActive && OtherMenuOwnsVRMenu())
+        {
+            vrMenuCanvas.SetActive(false);
+            return;
+        }
+
         vrMenuCanvas.SetActive(true);
 
         if (headsetCamera != null)
@@ -265,6 +271,12 @@ public class SelectionManipulator : MonoBehaviour
                 "Left Grip = Group Selection\n" +
                 "Right Grip = Ray Selection";
         }
+    }
+
+    private bool OtherMenuOwnsVRMenu()
+    {
+        return (spawnMenu != null && spawnMenu.IsSpawnModeActive) ||
+               (groupSelectionMenu != null && groupSelectionMenu.IsGroupModeActive);
     }
 
     private void EnsureIndicatorReferences()
