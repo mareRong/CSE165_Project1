@@ -5,6 +5,7 @@ using TMPro;
 public class SelectionManipulator : MonoBehaviour
 {
     public bool IsSelectionModeActive => selectionMode || manipulationMode;
+    private float hoverBlockTimer = 0f;
 
     public SpawnMenu spawnMenu;
 
@@ -192,6 +193,8 @@ public class SelectionManipulator : MonoBehaviour
         selectionMode = false;
         manipulationMode = false;
 
+        hoverBlockTimer = 0.2f;
+
         HideIndicator();
     }
 
@@ -348,6 +351,11 @@ public class SelectionManipulator : MonoBehaviour
 
     private void UpdateHoverHighlight()
     {
+        if (hoverBlockTimer > 0f)
+        {
+            hoverBlockTimer -= Time.deltaTime;
+            return;
+        }
         if (rayOrigin == null)
             return;
 
