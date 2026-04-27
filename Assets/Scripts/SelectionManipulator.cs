@@ -8,6 +8,7 @@ public class SelectionManipulator : MonoBehaviour
     private float hoverBlockTimer = 0f;
 
     public SpawnMenu spawnMenu;
+    public GroupSelectionManipulationVR groupSelectionMenu;
 
     [Header("Ray Settings")]
     public Transform rayOrigin;
@@ -71,6 +72,9 @@ public class SelectionManipulator : MonoBehaviour
         if (spawnMenu == null)
             spawnMenu = FindObjectOfType<SpawnMenu>(true);
 
+        if (groupSelectionMenu == null)
+            groupSelectionMenu = FindObjectOfType<GroupSelectionManipulationVR>(true);
+
         if (rayOrigin == null)
             rayOrigin = transform;
 
@@ -97,7 +101,10 @@ public class SelectionManipulator : MonoBehaviour
             out bool leftGripDown
         );
 
-        if (!IsSelectionModeActive && spawnMenu != null && spawnMenu.IsSpawnModeActive)
+        bool groupModeActive = groupSelectionMenu != null && groupSelectionMenu.IsGroupModeActive;
+
+        if (!IsSelectionModeActive &&
+            ((spawnMenu != null && spawnMenu.IsSpawnModeActive) || groupModeActive))
         {
             HideIndicator();
             UpdateVRMenu();
