@@ -991,18 +991,10 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1717954561962503725, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
       insertIndex: -1
       addedObject: {fileID: 674854248}
-    - targetCorrespondingSourceObject: {fileID: 1670256624, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 674854243}
   m_SourcePrefab: {fileID: 100100000, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
 --- !u!4 &674854241 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1717954561962503726, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
-  m_PrefabInstance: {fileID: 674854240}
-  m_PrefabAsset: {fileID: 0}
---- !u!1 &674854242 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 1670256624, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
   m_PrefabInstance: {fileID: 674854240}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &674854244 stripped
@@ -1057,6 +1049,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b06804973600744d29e5b49131bc8c4c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SpawnMenu
+  groupSelectionMenu: {fileID: 0}
+  singleSelectionMenu: {fileID: 0}
   spawnModeEnabled: 1
   spawnPrefabs:
   - {fileID: 3636958033759261081, guid: 5298a9fa39bbd4ac2a0700f6e8a6cf1f, type: 3}
@@ -1754,7 +1748,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 200, y: 50}
+  m_SizeDelta: {x: 800, y: 600}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1009222934
 MonoBehaviour:
@@ -1803,8 +1797,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 20
-  m_fontSizeBase: 20
+  m_fontSize: 18
+  m_fontSizeBase: 18
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -3418,6 +3412,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7c9f8a1d0b1c4e6fa2d3b4c5e6f70819, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GroupSelectionManipulationVR
+  spawnMenu: {fileID: 0}
+  singleSelectionMenu: {fileID: 0}
   selectionHand: {fileID: 0}
   selectableMask:
     serializedVersion: 2
