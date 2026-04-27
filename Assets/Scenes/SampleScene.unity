@@ -3452,12 +3452,12 @@ MonoBehaviour:
     m_Bits: 4294967295
   selectorDistance: 0.65
   selectorRadius: 1.1
-  vrMenuCanvas: {fileID: 0}
-  vrMenuText: {fileID: 0}
-  headsetCamera: {fileID: 0}
-  menuDistance: 0.42
+  vrMenuCanvas: {fileID: 527381669}
+  vrMenuText: {fileID: 1009222934}
+  headsetCamera: {fileID: 674854245}
+  menuDistance: 2
   menuOffset: {x: 0, y: -0.15, z: 0}
-  maxVisibleRows: 4
+  maxVisibleRows: 3
   scaleSensitivity: 1.1
   duplicateOffset: 0.35
   minObjectScale: 0.1
