@@ -85,7 +85,7 @@ public class SelectionManipulator : MonoBehaviour
         HideIndicator();
 
         if (vrMenuCanvas != null)
-            vrMenuCanvas.SetActive(false);
+            vrMenuCanvas.SetActive(true);
     }
 
     void Update()
@@ -218,7 +218,6 @@ public class SelectionManipulator : MonoBehaviour
         hoverBlockTimer = 0.2f;
 
         HideIndicator();
-        HideRayMenuCanvas();
     }
 
     private void ShowRayMenuCanvas()
@@ -229,8 +228,7 @@ public class SelectionManipulator : MonoBehaviour
 
     private void HideRayMenuCanvas()
     {
-        if (vrMenuCanvas != null)
-            vrMenuCanvas.SetActive(false);
+        // Shared with other menus; don't hide the canvas globally here.
     }
 
     private void UpdateVRMenu()
@@ -239,10 +237,7 @@ public class SelectionManipulator : MonoBehaviour
             return;
 
         if (!selectionMode && !manipulationMode)
-        {
-            HideRayMenuCanvas();
             return;
-        }
 
         ShowRayMenuCanvas();
 
@@ -280,7 +275,7 @@ public class SelectionManipulator : MonoBehaviour
         }
         else
         {
-            HideRayMenuCanvas();
+            return;
         }
     }
 
