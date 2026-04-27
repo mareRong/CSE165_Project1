@@ -8,6 +8,7 @@ using TMPro;
 public class SpawnMenu : MonoBehaviour
 {
     public bool IsSpawnModeActive => menuOpen || placementMode || orientationMode;
+    public bool IsSuppressingOtherModeEntry => Time.time < suppressOtherModeEntryUntil;
 
     public GroupSelectionManipulationVR groupSelectionMenu;
     public SelectionManipulator singleSelectionMenu;
@@ -53,6 +54,7 @@ public class SpawnMenu : MonoBehaviour
     private List<GameObject> multiSelectedPrefabs = new List<GameObject>();
 
     private float currentYRotation = 0f;
+    private float suppressOtherModeEntryUntil = 0f;
 
     [Header("Placement Offset")]
     public float spawnHeightOffset = 0.7f;
@@ -95,6 +97,12 @@ public class SpawnMenu : MonoBehaviour
     {
         if (!leftDevice.isValid || !rightDevice.isValid)
             RefreshDevices();
+
+        if (groupSelectionMenu == null)
+            groupSelectionMenu = FindObjectOfType<GroupSelectionManipulationVR>(true);
+
+        if (singleSelectionMenu == null)
+            singleSelectionMenu = FindObjectOfType<SelectionManipulator>(true);
 
         if (!spawnModeEnabled)
         {
@@ -306,6 +314,7 @@ public class SpawnMenu : MonoBehaviour
         orientationMode = false;
         placementMode = false;
         menuOpen = false;
+        suppressOtherModeEntryUntil = Time.time + 0.2f;
     }
 
     private void UpdateVRMenu()

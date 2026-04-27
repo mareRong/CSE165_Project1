@@ -116,6 +116,12 @@ public class SelectionManipulator : MonoBehaviour
         {
             HideIndicator();
 
+            if (spawnMenu != null && spawnMenu.IsSuppressingOtherModeEntry)
+            {
+                UpdateVRMenu();
+                return;
+            }
+
             if (rightGripDown)
                 StartSelectionMode();
 
