@@ -365,18 +365,18 @@ public class SpawnMenu : MonoBehaviour
             vrMenuText.text =
                 "Spawn Menu\n\n" +
                 BuildMenuText() + "\n" +
-                "Left Trigger = Back\n" +
+                "Left Trigger = Cancel / Exit\n" +
                 "Right Trigger = Change Prefab\n" +
-                "Right Grip = Add/Remove Multi-Select\n" +
+                "Right Grip = Multi-Select\n" +
                 "Left Grip = Start Placement";
         }
         else if (placementMode)
         {
             vrMenuText.text =
-                "Placement Mode\n\n" +
-                "Preview follows raycast hit point\n" +
-                "Right Trigger = Orientation\n" +
-                "Left Trigger = Back To Spawn Menu";
+            "Placement Mode\n\n" +
+            "Preview follows ray\n" +
+            "Right Trigger = Rotate Mode\n" +
+            "Left Trigger = Cancel Placement";
         }
         else if (orientationMode)
         {
@@ -384,7 +384,7 @@ public class SpawnMenu : MonoBehaviour
                 "Orientation Mode\n\n" +
                 "Hold Right Trigger = Rotate\n" +
                 "Right Grip = Confirm Spawn\n" +
-                "Left Trigger = Back To Placement";
+                "Left Trigger = Cancel Rotation";
         }
         else
         {

@@ -177,6 +177,14 @@ public class GroupSelectionManipulationVR : MonoBehaviour
             return;
         }
 
+        // Right Grip duplicates selected group.
+        if (RightGripDown())
+        {
+            DuplicateSelection();
+            return;
+        }
+
+        // Left Trigger only switches mode.
         if (LeftTriggerDown())
         {
             AdvanceMode();
@@ -184,7 +192,6 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         }
 
         // Move only happens while holding Right Trigger.
-        // This prevents objects from moving with the player's hand/body automatically.
         if (currentMode == GroupManipulationMode.Move)
         {
             if (rightTriggerPressed)
@@ -571,7 +578,6 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         }
         else
         {
-            DuplicateSelection();
             currentMode = GroupManipulationMode.Move;
         }
 
@@ -596,44 +602,37 @@ public class GroupSelectionManipulationVR : MonoBehaviour
     }
 
     private void ApplyMove()
-{
-    if (selectionHand == null || selectedObjects.Count == 0)
-        return;
-
-    Ray ray = new Ray(selectionHand.position, selectionHand.forward);
-    Vector3 targetPoint;
-
-    RaycastHit[] hits = Physics.RaycastAll(ray, rayMoveDistance, selectableMask);
-    System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
-
-    bool foundValidHit = false;
-    targetPoint = selectionHand.position + selectionHand.forward * fallbackMoveDistance;
-
-    for (int i = 0; i < hits.Length; i++)
     {
-        SelectableObject hitSelectable = hits[i].collider.GetComponentInParent<SelectableObject>();
+        if (selectionHand == null || selectedObjects.Count == 0)
+            return;
 
-        // Ignore the objects currently being moved
-        if (hitSelectable != null && selectedObjects.Contains(hitSelectable))
-            continue;
+        Ray ray = new Ray(selectionHand.position, selectionHand.forward);
+        Vector3 targetPoint = selectionHand.position + selectionHand.forward * fallbackMoveDistance;
 
-        targetPoint = hits[i].point;
-        foundValidHit = true;
-        break;
+        RaycastHit[] hits = Physics.RaycastAll(ray, rayMoveDistance, selectableMask);
+        System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+
+        for (int i = 0; i < hits.Length; i++)
+        {
+            SelectableObject hitSelectable = hits[i].collider.GetComponentInParent<SelectableObject>();
+
+            // Ignore the selected objects, so the ray does not pull the group toward itself.
+            if (hitSelectable != null && selectedObjects.Contains(hitSelectable))
+                continue;
+
+            targetPoint = hits[i].point;
+            break;
+        }
+
+        Vector3 groupPivot = GetGroupPivot();
+        Vector3 moveDelta = targetPoint - groupPivot;
+
+        for (int i = 0; i < selectedObjects.Count; i++)
+        {
+            if (selectedObjects[i] != null)
+                selectedObjects[i].transform.position += moveDelta;
+        }
     }
-
-    if (!foundValidHit)
-        targetPoint = selectionHand.position + selectionHand.forward * fallbackMoveDistance;
-
-    Vector3 groupPivot = GetGroupPivot();
-    Vector3 moveDelta = targetPoint - groupPivot;
-
-    for (int i = 0; i < selectedObjects.Count; i++)
-    {
-        if (selectedObjects[i] != null)
-            selectedObjects[i].transform.position += moveDelta;
-    }
-}
 
     private void ApplyRotation()
     {
@@ -748,12 +747,6 @@ public class GroupSelectionManipulationVR : MonoBehaviour
             duplicates.Add(selectable);
         }
 
-        for (int i = 0; i < originals.Count; i++)
-        {
-            if (originals[i] != null)
-                originals[i].SetHighlight(true, SelectableObject.HighlightChannel.GroupSelection);
-        }
-
         ClearSelection();
 
         for (int i = 0; i < duplicates.Count; i++)
@@ -809,7 +802,7 @@ public class GroupSelectionManipulationVR : MonoBehaviour
             vrMenuText.text =
                 "Group Selection Menu\n\n" +
                 BuildMenuText() + "\n" +
-                "Left/Right Trigger = Move\n" +
+                "Left/Right Trigger = Move Cursor\n" +
                 "Right Grip = Toggle Select\n" +
                 "Left Grip = Start Group Edit";
         }
@@ -817,23 +810,11 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         {
             vrMenuText.text =
                 "Group Manipulation Mode\n\n" +
-                "Current Mode: " + currentMode + "\n";
-
-            if (currentMode == GroupManipulationMode.Move)
-                vrMenuText.text += "Hold Right Trigger = Move With Ray\n";
-
-            vrMenuText.text +=
+                "Current Mode: " + currentMode + "\n\n" +
+                "Right Trigger = Use Current Mode\n" +
                 "Left Trigger = Next Mode\n" +
+                "Right Grip = Duplicate Selection\n" +
                 "Left Grip = Exit Manipulation";
-        }
-        else
-        {
-            vrMenuText.text =
-                "Group Selection Controls\n\n" +
-                "Left Grip = Open Group Menu\n" +
-                "Left/Right Trigger = Move\n" +
-                "Right Grip = Toggle Select\n" +
-                "Left Grip = Start Group Edit";
         }
     }
 
