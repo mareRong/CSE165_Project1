@@ -6,6 +6,8 @@ using UnityEngine.XR;
 
 public class GroupSelectionManipulationVR : MonoBehaviour
 {
+    public bool IsGroupModeActive => menuOpen || manipulationMode;
+
     private enum GroupManipulationMode
     {
         Move,
@@ -104,7 +106,7 @@ public class GroupSelectionManipulationVR : MonoBehaviour
     {
         if (!menuOpen)
         {
-            if (TriggerDown() && menuObjects.Count > 0)
+            if (GripDown() && menuObjects.Count > 0)
                 OpenMenu();
 
             return;
@@ -582,6 +584,9 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         if (vrMenuCanvas == null || vrMenuText == null)
             return;
 
+        if (!menuOpen && !manipulationMode)
+            return;
+
         vrMenuCanvas.SetActive(true);
 
         if (headsetCamera != null)
@@ -615,9 +620,9 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         {
             vrMenuText.text =
                 "Group Selection Controls\n\n" +
-                "Left Trigger = Open Group Menu\n" +
+                "Left Grip = Open Group Menu\n" +
                 "Left Thumbstick = Scroll List\n" +
-                "Left Grip = Exit Manipulation";
+                "Left Trigger = Toggle / Confirm";
         }
     }
 

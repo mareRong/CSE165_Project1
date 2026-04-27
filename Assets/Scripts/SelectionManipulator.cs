@@ -5,6 +5,8 @@ using UnityEngine.XR;
 // object selection, and move/rotate/scale manipulation.
 public class SelectionManipulator : MonoBehaviour
 {
+    public bool IsSelectionModeActive => selectionMode;
+
     private const string DefaultLineShaderName = "Sprites/Default";
     private const string PreferredIndicatorShaderName = "Universal Render Pipeline/Unlit";
 

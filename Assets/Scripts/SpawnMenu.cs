@@ -7,6 +7,9 @@ using TMPro;
 // Main class handling spawning system, menu, and VR interaction
 public class SpawnMenu : MonoBehaviour
 {
+    public GroupSelectionManipulationVR groupSelectionMenu;
+    public SelectionManipulator singleSelectionMenu;
+
     // ===================== MENU SETTINGS =====================
     [Header("Menu")]
     public bool spawnModeEnabled = true;
@@ -74,6 +77,12 @@ public class SpawnMenu : MonoBehaviour
         if (headsetCamera == null && Camera.main != null)
             headsetCamera = Camera.main.transform;
 
+        if (groupSelectionMenu == null)
+            groupSelectionMenu = FindObjectOfType<GroupSelectionManipulationVR>(true);
+
+        if (singleSelectionMenu == null)
+            singleSelectionMenu = FindObjectOfType<SelectionManipulator>(true);
+
         if (vrMenuCanvas != null)
             vrMenuCanvas.SetActive(true);
     }
@@ -106,7 +115,7 @@ public class SpawnMenu : MonoBehaviour
 
         if (!menuOpen && !placementMode && !orientationMode)
         {
-            if (leftGripDown)
+            if (leftTriggerDown)
                 menuOpen = true;
 
             UpdateVRMenu();
@@ -297,6 +306,13 @@ private void UpdateVRMenu()
     // Always show the VR menu, even when no mode is active
     vrMenuCanvas.SetActive(true);
 
+    bool spawnModeActive = menuOpen || placementMode || orientationMode;
+    bool groupModeActive = groupSelectionMenu != null && groupSelectionMenu.IsGroupModeActive;
+    bool singleModeActive = singleSelectionMenu != null && singleSelectionMenu.IsSelectionModeActive;
+
+    if (!spawnModeActive && (groupModeActive || singleModeActive))
+        return;
+
     // Keep the menu floating in front of the headset camera
     if (headsetCamera != null)
     {
@@ -338,9 +354,9 @@ private void UpdateVRMenu()
     {
         vrMenuText.text =
             "Controls\n\n" +
-            "Left Grip = Open Spawn Menu\n" +
-            "Thumbstick = Move\n" +
-            "Right Grip = Selection Mode";
+            "Left Trigger = Spawn\n" +
+            "Left Grip = Group Selection\n" +
+            "Right Grip = Single Selection";
     }
 }
 
