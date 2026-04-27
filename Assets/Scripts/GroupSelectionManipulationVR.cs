@@ -516,14 +516,37 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         for (int i = 0; i < selectedObjects.Count; i++)
         {
             Transform target = selectedObjects[i].transform;
+            float originalBottom = GetObjectBottom(target);
             Vector3 scaled = target.localScale * scaleFactor;
             scaled.x = Mathf.Clamp(scaled.x, minObjectScale, maxObjectScale);
             scaled.y = Mathf.Clamp(scaled.y, minObjectScale, maxObjectScale);
             scaled.z = Mathf.Clamp(scaled.z, minObjectScale, maxObjectScale);
             target.localScale = scaled;
+
+            float scaledBottom = GetObjectBottom(target);
+            target.position += Vector3.up * (originalBottom - scaledBottom);
         }
 
         lastHandPosition = selectionHand.position;
+    }
+
+    private float GetObjectBottom(Transform target)
+    {
+        if (target == null)
+            return 0f;
+
+        Renderer[] renderers = target.GetComponentsInChildren<Renderer>(true);
+        if (renderers.Length == 0)
+            return target.position.y;
+
+        Bounds bounds = renderers[0].bounds;
+        for (int i = 1; i < renderers.Length; i++)
+        {
+            if (renderers[i] != null)
+                bounds.Encapsulate(renderers[i].bounds);
+        }
+
+        return bounds.min.y;
     }
 
     private void DuplicateSelection()
