@@ -99,6 +99,7 @@ public class SelectionManipulator : MonoBehaviour
 
         if (!IsSelectionModeActive && spawnMenu != null && spawnMenu.IsSpawnModeActive)
         {
+            HideIndicator();
             UpdateVRMenu();
             return;
         }
@@ -106,6 +107,8 @@ public class SelectionManipulator : MonoBehaviour
         // Idle: Right Grip starts ray selection
         if (!selectionMode && !manipulationMode)
         {
+            HideIndicator();
+
             if (rightGripDown)
                 StartSelectionMode();
 
