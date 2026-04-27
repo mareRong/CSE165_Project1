@@ -1011,6 +1011,18 @@ PrefabInstance:
       propertyPath: headsetCamera
       value: 
       objectReference: {fileID: 674854245}
+    - target: {fileID: 4313048543678107158, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
+      propertyPath: vrMenuText
+      value: 
+      objectReference: {fileID: 1009222934}
+    - target: {fileID: 4313048543678107158, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
+      propertyPath: vrMenuCanvas
+      value: 
+      objectReference: {fileID: 527381669}
+    - target: {fileID: 4313048543678107158, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
+      propertyPath: headsetCamera
+      value: 
+      objectReference: {fileID: 674854245}
     - target: {fileID: 5033801203051696737, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
       propertyPath: m_Enabled
       value: 0
