@@ -7,7 +7,6 @@ public class SelectionManipulator : MonoBehaviour
     public bool IsSelectionModeActive => selectionMode || manipulationMode;
     private float hoverBlockTimer = 0f;
 
-    public VRMenuManager menuManager;
     public SpawnMenu spawnMenu;
     public GroupSelectionManipulationVR groupSelectionMenu;
 
@@ -70,9 +69,6 @@ public class SelectionManipulator : MonoBehaviour
     {
         RefreshDevices();
 
-        if (menuManager == null)
-            menuManager = FindObjectOfType<VRMenuManager>(true);
-
         if (spawnMenu == null)
             spawnMenu = FindObjectOfType<SpawnMenu>(true);
 
@@ -105,16 +101,8 @@ public class SelectionManipulator : MonoBehaviour
             out bool leftGripDown
         );
 
-        bool canControlSelection =
-            menuManager == null ||
-            menuManager.IsModeActive(VRMenuManager.VRMenuMode.SingleSelection) ||
-            menuManager.CanDisplay(VRMenuManager.VRMenuMode.SingleSelection, true);
-
-        if (!canControlSelection)
+        if (!IsSelectionModeActive && spawnMenu != null && spawnMenu.IsSpawnModeActive)
         {
-            if (IsSelectionModeActive)
-                ForceCloseFromManager();
-
             UpdateVRMenu();
             return;
         }
@@ -193,9 +181,6 @@ public class SelectionManipulator : MonoBehaviour
 
     private void StartSelectionMode()
     {
-        if (menuManager != null)
-            menuManager.RequestMode(VRMenuManager.VRMenuMode.SingleSelection);
-
         selectionMode = true;
         manipulationMode = false;
         currentMode = ManipulationMode.Move;
@@ -231,9 +216,6 @@ public class SelectionManipulator : MonoBehaviour
         hoverBlockTimer = 0.2f;
 
         HideIndicator();
-
-        if (menuManager != null)
-            menuManager.ReleaseMode(VRMenuManager.VRMenuMode.SingleSelection);
     }
 
     private void UpdateVRMenu()
@@ -241,14 +223,7 @@ public class SelectionManipulator : MonoBehaviour
         if (vrMenuCanvas == null || vrMenuText == null)
             return;
 
-        bool canDisplay =
-            menuManager == null ||
-            menuManager.CanDisplay(VRMenuManager.VRMenuMode.SingleSelection, true);
-
-        vrMenuCanvas.SetActive(canDisplay);
-
-        if (!canDisplay)
-            return;
+        vrMenuCanvas.SetActive(true);
 
         if (headsetCamera != null)
         {
@@ -290,20 +265,6 @@ public class SelectionManipulator : MonoBehaviour
                 "Left Grip = Group Selection\n" +
                 "Right Grip = Ray Selection";
         }
-    }
-
-    public void ForceCloseFromManager()
-    {
-        if (selectedObject != null)
-            DeselectObject();
-
-        ClearHoverHighlight();
-        selectionMode = false;
-        manipulationMode = false;
-        HideIndicator();
-
-        if (vrMenuCanvas != null)
-            vrMenuCanvas.SetActive(false);
     }
 
     private void EnsureIndicatorReferences()

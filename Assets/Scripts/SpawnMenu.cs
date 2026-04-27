@@ -9,7 +9,6 @@ public class SpawnMenu : MonoBehaviour
 {
     public bool IsSpawnModeActive => menuOpen || placementMode || orientationMode;
 
-    public VRMenuManager menuManager;
     public GroupSelectionManipulationVR groupSelectionMenu;
     public SelectionManipulator singleSelectionMenu;
 
@@ -71,9 +70,6 @@ public class SpawnMenu : MonoBehaviour
         if (headsetCamera == null && Camera.main != null)
             headsetCamera = Camera.main.transform;
 
-        if (menuManager == null)
-            menuManager = FindObjectOfType<VRMenuManager>(true);
-
         if (groupSelectionMenu == null)
             groupSelectionMenu = FindObjectOfType<GroupSelectionManipulationVR>(true);
 
@@ -91,9 +87,6 @@ public class SpawnMenu : MonoBehaviour
 
         if (spawnPrefabs == null || spawnPrefabs.Length == 0)
             return;
-
-        if (menuManager != null)
-            menuManager.RequestMode(VRMenuManager.VRMenuMode.Spawn);
 
         menuOpen = true;
     }
@@ -123,13 +116,12 @@ public class SpawnMenu : MonoBehaviour
             out bool rightGripDown
         );
 
-        if (menuManager != null &&
-            menuManager.ActiveMode != VRMenuManager.VRMenuMode.None &&
-            !menuManager.IsModeActive(VRMenuManager.VRMenuMode.Spawn))
-        {
-            if (IsSpawnModeActive)
-                ForceCloseFromManager();
+        bool otherModeActive =
+            (groupSelectionMenu != null && groupSelectionMenu.IsGroupModeActive) ||
+            (singleSelectionMenu != null && singleSelectionMenu.IsSelectionModeActive);
 
+        if (!IsSpawnModeActive && otherModeActive)
+        {
             UpdateVRMenu();
             return;
         }
@@ -137,7 +129,7 @@ public class SpawnMenu : MonoBehaviour
         if (!menuOpen && !placementMode && !orientationMode)
         {
             if (leftTriggerDown)
-                OpenSpawnMenuFromIdle();
+                menuOpen = true;
 
             UpdateVRMenu();
             return;
@@ -320,9 +312,6 @@ public class SpawnMenu : MonoBehaviour
         orientationMode = false;
         placementMode = false;
         menuOpen = false;
-
-        if (menuManager != null)
-            menuManager.ReleaseMode(VRMenuManager.VRMenuMode.Spawn);
     }
 
     private void UpdateVRMenu()
@@ -330,10 +319,13 @@ public class SpawnMenu : MonoBehaviour
         if (vrMenuCanvas == null || vrMenuText == null)
             return;
 
-        bool canDisplay = menuManager == null || menuManager.CanDisplay(VRMenuManager.VRMenuMode.Spawn);
-        vrMenuCanvas.SetActive(canDisplay);
+        vrMenuCanvas.SetActive(true);
 
-        if (!canDisplay)
+        bool spawnModeActive = menuOpen || placementMode || orientationMode;
+        bool groupModeActive = groupSelectionMenu != null && groupSelectionMenu.IsGroupModeActive;
+        bool singleModeActive = singleSelectionMenu != null && singleSelectionMenu.IsSelectionModeActive;
+
+        if (!spawnModeActive && (groupModeActive || singleModeActive))
             return;
 
         if (headsetCamera != null)
@@ -373,6 +365,14 @@ public class SpawnMenu : MonoBehaviour
                 "Right Grip = Confirm Spawn\n" +
                 "Left Trigger = Cancel / Exit";
         }
+        else
+        {
+            vrMenuText.text =
+                "Controls\n\n" +
+                "Left Trigger = Spawn\n" +
+                "Left Grip = Group Selection\n" +
+                "Right Grip = Single Selection";
+        }
     }
 
     private void ExitSpawnMode()
@@ -383,20 +383,6 @@ public class SpawnMenu : MonoBehaviour
         placementMode = false;
         orientationMode = false;
 
-        multiSelectedPrefabs.Clear();
-        selectedPrefab = null;
-
-        if (menuManager != null)
-            menuManager.ReleaseMode(VRMenuManager.VRMenuMode.Spawn);
-    }
-
-    public void ForceCloseFromManager()
-    {
-        CancelPreview();
-
-        menuOpen = false;
-        placementMode = false;
-        orientationMode = false;
         multiSelectedPrefabs.Clear();
         selectedPrefab = null;
     }
@@ -468,8 +454,6 @@ public class SpawnMenu : MonoBehaviour
 
     private void ResetModes()
     {
-        bool wasActive = IsSpawnModeActive;
-
         menuOpen = false;
         placementMode = false;
         orientationMode = false;
@@ -481,9 +465,6 @@ public class SpawnMenu : MonoBehaviour
 
         if (vrMenuCanvas != null)
             vrMenuCanvas.SetActive(false);
-
-        if (wasActive && menuManager != null)
-            menuManager.ReleaseMode(VRMenuManager.VRMenuMode.Spawn);
     }
 
     private void RefreshDevices()

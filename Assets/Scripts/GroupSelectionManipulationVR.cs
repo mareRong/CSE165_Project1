@@ -9,7 +9,6 @@ public class GroupSelectionManipulationVR : MonoBehaviour
     private const string PreferredIndicatorShaderName = "Universal Render Pipeline/Unlit";
 
     public bool IsGroupModeActive => menuOpen || manipulationMode;
-    public VRMenuManager menuManager;
     public SpawnMenu spawnMenu;
     public SelectionManipulator singleSelectionMenu;
 
@@ -86,9 +85,6 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         if (headsetCamera == null && Camera.main != null)
             headsetCamera = Camera.main.transform;
 
-        if (menuManager == null)
-            menuManager = FindObjectOfType<VRMenuManager>(true);
-
         if (spawnMenu == null)
             spawnMenu = FindObjectOfType<SpawnMenu>(true);
 
@@ -111,15 +107,13 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         ReadButtons();
         UpdateMenuObjects();
 
-        if (menuManager != null &&
-            menuManager.ActiveMode != VRMenuManager.VRMenuMode.None &&
-            !menuManager.IsModeActive(VRMenuManager.VRMenuMode.GroupSelection))
-        {
-            if (IsGroupModeActive)
-                ForceCloseFromManager();
+        bool otherModeActive =
+            (spawnMenu != null && spawnMenu.IsSpawnModeActive) ||
+            (singleSelectionMenu != null && singleSelectionMenu.IsSelectionModeActive);
 
+        if (!IsGroupModeActive && otherModeActive)
+        {
             HideIndicator();
-            UpdateVRMenu();
             return;
         }
 
@@ -148,7 +142,7 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         if (!menuOpen)
         {
             if (LeftGripDown() && menuObjects.Count > 0)
-                OpenGroupMenuFromIdle();
+                OpenMenu();
 
             return;
         }
@@ -405,21 +399,12 @@ public class GroupSelectionManipulationVR : MonoBehaviour
             return;
 
         UpdateMenuObjects();
-        if (menuObjects.Count == 0)
-            return;
-
-        if (menuManager != null)
-            menuManager.RequestMode(VRMenuManager.VRMenuMode.GroupSelection);
-
         OpenMenu();
     }
 
-    private void CloseMenu(bool releaseOwnership = true)
+    private void CloseMenu()
     {
         menuOpen = false;
-
-        if (releaseOwnership && !manipulationMode && menuManager != null)
-            menuManager.ReleaseMode(VRMenuManager.VRMenuMode.GroupSelection);
     }
 
     private void AdvanceMenuIndex(int direction)
@@ -442,14 +427,9 @@ public class GroupSelectionManipulationVR : MonoBehaviour
 
     private void ConfirmMenuSelection()
     {
-        if (selectedObjects.Count > 0)
-        {
-            CloseMenu(false);
-            BeginManipulation();
-            return;
-        }
-
         CloseMenu();
+        if (selectedObjects.Count > 0)
+            BeginManipulation();
     }
 
     private int GetMenuEntryCount()
@@ -508,7 +488,7 @@ public class GroupSelectionManipulationVR : MonoBehaviour
 
     private void BeginManipulation()
     {
-        CloseMenu(false);
+        CloseMenu();
         manipulationMode = true;
         currentMode = GroupManipulationMode.Move;
         lastHandPosition = selectionHand.position;
@@ -549,9 +529,6 @@ public class GroupSelectionManipulationVR : MonoBehaviour
 
         rigidbodyStates.Clear();
         ClearSelection();
-
-        if (menuManager != null)
-            menuManager.ReleaseMode(VRMenuManager.VRMenuMode.GroupSelection);
     }
 
     private void AdvanceMode()
@@ -731,11 +708,10 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         if (vrMenuCanvas == null || vrMenuText == null)
             return;
 
-        bool canDisplay = menuManager == null || menuManager.CanDisplay(VRMenuManager.VRMenuMode.GroupSelection);
-        vrMenuCanvas.SetActive(canDisplay);
-
-        if (!canDisplay || (!menuOpen && !manipulationMode))
+        if (!menuOpen && !manipulationMode)
             return;
+
+        vrMenuCanvas.SetActive(true);
 
         if (headsetCamera != null)
         {
@@ -774,27 +750,6 @@ public class GroupSelectionManipulationVR : MonoBehaviour
                 "Right Grip = Toggle Select\n" +
                 "Left Grip = Start Group Edit";
         }
-    }
-
-    public void ForceCloseFromManager()
-    {
-        menuOpen = false;
-
-        if (manipulationMode)
-        {
-            EndManipulation();
-        }
-        else
-        {
-            rigidbodyStates.Clear();
-            ClearSelection();
-        }
-
-        manipulationMode = false;
-        HideIndicator();
-
-        if (vrMenuCanvas != null)
-            vrMenuCanvas.SetActive(false);
     }
 
     private string BuildMenuText()
