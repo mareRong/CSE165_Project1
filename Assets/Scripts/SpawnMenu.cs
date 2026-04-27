@@ -7,6 +7,8 @@ using TMPro;
 // Main class handling spawning system, menu, and VR interaction
 public class SpawnMenu : MonoBehaviour
 {
+    public bool IsSpawnModeActive => menuOpen || placementMode || orientationMode;
+
     public GroupSelectionManipulationVR groupSelectionMenu;
     public SelectionManipulator singleSelectionMenu;
 
@@ -112,6 +114,16 @@ public class SpawnMenu : MonoBehaviour
             out bool leftGripDown,
             out bool rightGripDown
         );
+
+        bool otherModeActive =
+            (groupSelectionMenu != null && groupSelectionMenu.IsGroupModeActive) ||
+            (singleSelectionMenu != null && singleSelectionMenu.IsSelectionModeActive);
+
+        if (!IsSpawnModeActive && otherModeActive)
+        {
+            UpdateVRMenu();
+            return;
+        }
 
         if (!menuOpen && !placementMode && !orientationMode)
         {

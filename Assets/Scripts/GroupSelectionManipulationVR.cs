@@ -7,6 +7,8 @@ using UnityEngine.XR;
 public class GroupSelectionManipulationVR : MonoBehaviour
 {
     public bool IsGroupModeActive => menuOpen || manipulationMode;
+    public SpawnMenu spawnMenu;
+    public SelectionManipulator singleSelectionMenu;
 
     private enum GroupManipulationMode
     {
@@ -75,6 +77,12 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         if (headsetCamera == null && Camera.main != null)
             headsetCamera = Camera.main.transform;
 
+        if (spawnMenu == null)
+            spawnMenu = FindObjectOfType<SpawnMenu>(true);
+
+        if (singleSelectionMenu == null)
+            singleSelectionMenu = FindObjectOfType<SelectionManipulator>(true);
+
         if (vrMenuCanvas != null)
             vrMenuCanvas.SetActive(true);
     }
@@ -90,6 +98,13 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         CleanupSelection();
         ReadButtons();
         UpdateMenuObjects();
+
+        bool otherModeActive =
+            (spawnMenu != null && spawnMenu.IsSpawnModeActive) ||
+            (singleSelectionMenu != null && singleSelectionMenu.IsSelectionModeActive);
+
+        if (!IsGroupModeActive && otherModeActive)
+            return;
 
         if (manipulationMode)
         {

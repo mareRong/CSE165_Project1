@@ -6,6 +6,8 @@ using UnityEngine.XR;
 public class SelectionManipulator : MonoBehaviour
 {
     public bool IsSelectionModeActive => selectionMode;
+    public SpawnMenu spawnMenu;
+    public GroupSelectionManipulationVR groupSelectionMenu;
 
     private const string DefaultLineShaderName = "Sprites/Default";
     private const string PreferredIndicatorShaderName = "Universal Render Pipeline/Unlit";
@@ -67,6 +69,12 @@ public class SelectionManipulator : MonoBehaviour
     {
         RefreshDevices();
 
+        if (spawnMenu == null)
+            spawnMenu = FindObjectOfType<SpawnMenu>(true);
+
+        if (groupSelectionMenu == null)
+            groupSelectionMenu = FindObjectOfType<GroupSelectionManipulationVR>(true);
+
         if (rayOrigin == null)
             rayOrigin = transform;
 
@@ -91,6 +99,13 @@ public class SelectionManipulator : MonoBehaviour
             out bool rightGripDown,
             out bool leftTriggerDown
         );
+
+        bool otherModeActive =
+            (spawnMenu != null && spawnMenu.IsSpawnModeActive) ||
+            (groupSelectionMenu != null && groupSelectionMenu.IsGroupModeActive);
+
+        if (!selectionMode && otherModeActive)
+            return;
 
         // Idle state: Right Grip enters selection mode
         if (!selectionMode)
