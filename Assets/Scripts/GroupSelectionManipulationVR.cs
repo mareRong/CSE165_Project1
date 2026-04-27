@@ -792,24 +792,4 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         return builder.ToString();
     }
 
-    private void OnGUI()
-    {
-        if (!menuOpen && !manipulationMode)
-            return;
-
-        float width = 460f;
-        float height = 150f;
-        float x = Screen.width - width - 20f;
-        float y = 40f;
-
-        string modeText = manipulationMode ? currentMode.ToString() : (menuOpen ? "Menu" : "Selection");
-
-        GUI.Box(new Rect(x, y, width, height),
-            "Group Selection (Left Hand)\n" +
-            "Mode: " + modeText + "\n\n" +
-            "Left Grip = Open menu / exit manipulation\n" +
-            "Left/Right Trigger = Move through list\n" +
-            "Right Grip = Toggle item\n" +
-            "While manipulating: Left Trigger cycles Move -> Rotate -> Scale -> Duplicate");
-    }
 }
