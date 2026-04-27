@@ -426,6 +426,7 @@ public class GroupSelectionManipulationVR : MonoBehaviour
         }
 
         rigidbodyStates.Clear();
+        ClearSelection();
     }
 
     private void AdvanceMode()
