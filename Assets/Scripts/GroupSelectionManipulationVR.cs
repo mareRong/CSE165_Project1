@@ -512,14 +512,10 @@ public class GroupSelectionManipulationVR : MonoBehaviour
             return;
 
         scaleFactor = Mathf.Max(0.2f, scaleFactor);
-        Vector3 pivot = GetGroupPivot();
 
         for (int i = 0; i < selectedObjects.Count; i++)
         {
             Transform target = selectedObjects[i].transform;
-            Vector3 offset = target.position - pivot;
-            target.position = pivot + offset * scaleFactor;
-
             Vector3 scaled = target.localScale * scaleFactor;
             scaled.x = Mathf.Clamp(scaled.x, minObjectScale, maxObjectScale);
             scaled.y = Mathf.Clamp(scaled.y, minObjectScale, maxObjectScale);
