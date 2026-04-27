@@ -897,9 +897,6 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: -927199367670048503, guid: e647c15398a10fb4eb947f52be5bb123, type: 3}
       insertIndex: -1
       addedObject: {fileID: 565039800}
-    - targetCorrespondingSourceObject: {fileID: -927199367670048503, guid: e647c15398a10fb4eb947f52be5bb123, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 565039799}
   m_SourcePrefab: {fileID: 100100000, guid: e647c15398a10fb4eb947f52be5bb123, type: 3}
 --- !u!4 &565039796 stripped
 Transform:
@@ -924,33 +921,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SelectableObject
   highlightColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
---- !u!54 &565039799
-Rigidbody:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 565039797}
-  serializedVersion: 5
-  m_Mass: 1
-  m_LinearDamping: 0
-  m_AngularDamping: 0.05
-  m_CenterOfMass: {x: 0, y: 0, z: 0}
-  m_InertiaTensor: {x: 1, y: 1, z: 1}
-  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ImplicitCom: 1
-  m_ImplicitTensor: 1
-  m_UseGravity: 1
-  m_IsKinematic: 0
-  m_Interpolate: 0
-  m_Constraints: 0
-  m_CollisionDetection: 0
 --- !u!64 &565039800
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -1588,9 +1558,6 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: -927199367670048503, guid: e647c15398a10fb4eb947f52be5bb123, type: 3}
       insertIndex: -1
       addedObject: {fileID: 899265212}
-    - targetCorrespondingSourceObject: {fileID: -927199367670048503, guid: e647c15398a10fb4eb947f52be5bb123, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 899265211}
   m_SourcePrefab: {fileID: 100100000, guid: e647c15398a10fb4eb947f52be5bb123, type: 3}
 --- !u!4 &899265208 stripped
 Transform:
@@ -1615,33 +1582,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SelectableObject
   highlightColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
---- !u!54 &899265211
-Rigidbody:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 899265209}
-  serializedVersion: 5
-  m_Mass: 1
-  m_LinearDamping: 0
-  m_AngularDamping: 0.05
-  m_CenterOfMass: {x: 0, y: 0, z: 0}
-  m_InertiaTensor: {x: 1, y: 1, z: 1}
-  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ImplicitCom: 1
-  m_ImplicitTensor: 1
-  m_UseGravity: 1
-  m_IsKinematic: 0
-  m_Interpolate: 0
-  m_Constraints: 0
-  m_CollisionDetection: 0
 --- !u!64 &899265212
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -1730,9 +1670,6 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: -927199367670048503, guid: e647c15398a10fb4eb947f52be5bb123, type: 3}
       insertIndex: -1
       addedObject: {fileID: 937201429}
-    - targetCorrespondingSourceObject: {fileID: -927199367670048503, guid: e647c15398a10fb4eb947f52be5bb123, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 937201428}
   m_SourcePrefab: {fileID: 100100000, guid: e647c15398a10fb4eb947f52be5bb123, type: 3}
 --- !u!4 &937201425 stripped
 Transform:
@@ -1757,33 +1694,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SelectableObject
   highlightColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
---- !u!54 &937201428
-Rigidbody:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 937201426}
-  serializedVersion: 5
-  m_Mass: 1
-  m_LinearDamping: 0
-  m_AngularDamping: 0.05
-  m_CenterOfMass: {x: 0, y: 0, z: 0}
-  m_InertiaTensor: {x: 1, y: 1, z: 1}
-  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ImplicitCom: 1
-  m_ImplicitTensor: 1
-  m_UseGravity: 1
-  m_IsKinematic: 0
-  m_Interpolate: 0
-  m_Constraints: 0
-  m_CollisionDetection: 0
 --- !u!64 &937201429
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -2548,9 +2458,6 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: -927199367670048503, guid: e647c15398a10fb4eb947f52be5bb123, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1328058203}
-    - targetCorrespondingSourceObject: {fileID: -927199367670048503, guid: e647c15398a10fb4eb947f52be5bb123, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1328058202}
   m_SourcePrefab: {fileID: 100100000, guid: e647c15398a10fb4eb947f52be5bb123, type: 3}
 --- !u!4 &1328058199 stripped
 Transform:
@@ -2575,33 +2482,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SelectableObject
   highlightColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
---- !u!54 &1328058202
-Rigidbody:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1328058200}
-  serializedVersion: 5
-  m_Mass: 1
-  m_LinearDamping: 0
-  m_AngularDamping: 0.05
-  m_CenterOfMass: {x: 0, y: 0, z: 0}
-  m_InertiaTensor: {x: 1, y: 1, z: 1}
-  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ImplicitCom: 1
-  m_ImplicitTensor: 1
-  m_UseGravity: 1
-  m_IsKinematic: 0
-  m_Interpolate: 0
-  m_Constraints: 0
-  m_CollisionDetection: 0
 --- !u!64 &1328058203
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -2751,9 +2631,6 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: -927199367670048503, guid: e647c15398a10fb4eb947f52be5bb123, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1527761045}
-    - targetCorrespondingSourceObject: {fileID: -927199367670048503, guid: e647c15398a10fb4eb947f52be5bb123, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1527761044}
   m_SourcePrefab: {fileID: 100100000, guid: e647c15398a10fb4eb947f52be5bb123, type: 3}
 --- !u!4 &1527761041 stripped
 Transform:
@@ -2778,33 +2655,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SelectableObject
   highlightColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
---- !u!54 &1527761044
-Rigidbody:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1527761042}
-  serializedVersion: 5
-  m_Mass: 1
-  m_LinearDamping: 0
-  m_AngularDamping: 0.05
-  m_CenterOfMass: {x: 0, y: 0, z: 0}
-  m_InertiaTensor: {x: 1, y: 1, z: 1}
-  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ImplicitCom: 1
-  m_ImplicitTensor: 1
-  m_UseGravity: 1
-  m_IsKinematic: 0
-  m_Interpolate: 0
-  m_Constraints: 0
-  m_CollisionDetection: 0
 --- !u!64 &1527761045
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -3186,9 +3036,6 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: -927199367670048503, guid: e647c15398a10fb4eb947f52be5bb123, type: 3}
       insertIndex: -1
       addedObject: {fileID: 2019401171}
-    - targetCorrespondingSourceObject: {fileID: -927199367670048503, guid: e647c15398a10fb4eb947f52be5bb123, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 2019401170}
   m_SourcePrefab: {fileID: 100100000, guid: e647c15398a10fb4eb947f52be5bb123, type: 3}
 --- !u!4 &2019401167 stripped
 Transform:
@@ -3213,33 +3060,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SelectableObject
   highlightColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
---- !u!54 &2019401170
-Rigidbody:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2019401168}
-  serializedVersion: 5
-  m_Mass: 1
-  m_LinearDamping: 0
-  m_AngularDamping: 0.05
-  m_CenterOfMass: {x: 0, y: 0, z: 0}
-  m_InertiaTensor: {x: 1, y: 1, z: 1}
-  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ImplicitCom: 1
-  m_ImplicitTensor: 1
-  m_UseGravity: 1
-  m_IsKinematic: 0
-  m_Interpolate: 0
-  m_Constraints: 0
-  m_CollisionDetection: 0
 --- !u!64 &2019401171
 MeshCollider:
   m_ObjectHideFlags: 0
