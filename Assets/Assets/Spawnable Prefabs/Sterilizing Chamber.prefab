@@ -50,7 +50,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -927199367670048503, guid: 655757b2fd519e74ba332ec86a35e72f, type: 3}
       propertyPath: m_Name
-      value: Sterilizing_chamber_1_prefab
+      value: Sterilizing Chamber
+      objectReference: {fileID: 0}
+    - target: {fileID: -927199367670048503, guid: 655757b2fd519e74ba332ec86a35e72f, type: 3}
+      propertyPath: m_Layer
+      value: 3
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

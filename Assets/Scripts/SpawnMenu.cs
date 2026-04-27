@@ -1,23 +1,35 @@
 using UnityEngine;
 using UnityEngine.XR;
+using System.Collections.Generic;
+using System.Text;
+using TMPro;
 
+// Main class handling spawning system, menu, and VR interaction
 public class SpawnMenu : MonoBehaviour
 {
+    public bool IsSpawnModeActive => menuOpen || placementMode || orientationMode;
+
+    public GroupSelectionManipulationVR groupSelectionMenu;
+    public SelectionManipulator singleSelectionMenu;
+
     [Header("Menu")]
     public bool spawnModeEnabled = true;
     public GameObject[] spawnPrefabs;
 
-    [Header("Spawning")]
+    [Header("Ray")]
     public Transform rayOrigin;
     public float maxRayDistance = 20f;
     public LayerMask placementMask = ~0;
 
-    [Header("Adjustment")]
-    public float placementStep = 0.2f;
-    public float rotationStep = 15f;
+    [Header("VR Menu Canvas")]
+    public GameObject vrMenuCanvas;
+    public TextMeshProUGUI vrMenuText;
+    public Transform headsetCamera;
+    public float menuDistance = 2f;
+    public Vector3 menuOffset = new Vector3(0f, -0.15f, 0f);
 
-    [Header("Debug")]
-    public bool showMenuOnScreen = true;
+    [Header("Multi Spawn")]
+    public float multiSpawnSpacing = 1.0f;
 
     private InputDevice leftDevice;
     private InputDevice rightDevice;
@@ -27,16 +39,26 @@ public class SpawnMenu : MonoBehaviour
     private bool prevLeftGrip;
     private bool prevRightGrip;
 
+    private bool rightTriggerHeld;
+
     private int selectedIndex = 0;
 
     private bool menuOpen = false;
     private bool placementMode = false;
     private bool orientationMode = false;
 
+    private GameObject selectedPrefab;
     private GameObject previewObject;
 
-    private float placementOffset = 0f;
+    private List<GameObject> multiSelectedPrefabs = new List<GameObject>();
+
     private float currentYRotation = 0f;
+
+    [Header("Placement Offset")]
+    public float spawnHeightOffset = 0.7f;
+
+    [Header("Spawn Constraints")]
+    public float maxSpawnRange = 5f;
 
     void Start()
     {
@@ -44,6 +66,29 @@ public class SpawnMenu : MonoBehaviour
 
         if (rayOrigin == null)
             rayOrigin = transform;
+
+        if (headsetCamera == null && Camera.main != null)
+            headsetCamera = Camera.main.transform;
+
+        if (groupSelectionMenu == null)
+            groupSelectionMenu = FindObjectOfType<GroupSelectionManipulationVR>(true);
+
+        if (singleSelectionMenu == null)
+            singleSelectionMenu = FindObjectOfType<SelectionManipulator>(true);
+
+        if (vrMenuCanvas != null)
+            vrMenuCanvas.SetActive(true);
+    }
+
+    public void OpenSpawnMenuFromIdle()
+    {
+        if (!spawnModeEnabled || IsSpawnModeActive)
+            return;
+
+        if (spawnPrefabs == null || spawnPrefabs.Length == 0)
+            return;
+
+        menuOpen = true;
     }
 
     void Update()
@@ -53,132 +98,367 @@ public class SpawnMenu : MonoBehaviour
 
         if (!spawnModeEnabled)
         {
-            menuOpen = false;
-            placementMode = false;
-            orientationMode = false;
-
-            if (previewObject != null)
-                Destroy(previewObject);
-
+            ResetModes();
+            UpdateVRMenu();
             return;
         }
-
-        ReadButtons(out bool leftTriggerDown, out bool rightTriggerDown,
-                    out bool leftGripDown, out bool rightGripDown);
 
         if (spawnPrefabs == null || spawnPrefabs.Length == 0)
-            return;
-
-        // Preview follows raycast
-        if ((placementMode || orientationMode) && previewObject != null)
         {
-            Ray ray = new Ray(rayOrigin.position, rayOrigin.forward);
-            RaycastHit hit;
-
-            if (Physics.Raycast(ray, out hit, maxRayDistance, placementMask))
-            {
-                Vector3 pos = hit.point + rayOrigin.forward * placementOffset;
-                previewObject.transform.position = pos;
-                previewObject.transform.rotation = Quaternion.Euler(0, currentYRotation, 0);
-            }
+            UpdateVRMenu();
+            return;
         }
 
-        // Open menu
+        ReadButtons(
+            out bool leftTriggerDown,
+            out bool rightTriggerDown,
+            out bool leftGripDown,
+            out bool rightGripDown
+        );
+
+        bool otherModeActive =
+            (groupSelectionMenu != null && groupSelectionMenu.IsGroupModeActive) ||
+            (singleSelectionMenu != null && singleSelectionMenu.IsSelectionModeActive);
+
+        if (!IsSpawnModeActive && otherModeActive)
+        {
+            UpdateVRMenu();
+            return;
+        }
+
         if (!menuOpen && !placementMode && !orientationMode)
         {
-            if (rightTriggerDown)
-            {
+            if (leftTriggerDown)
                 menuOpen = true;
-                Debug.Log("Menu opened");
-            }
+
+            UpdateVRMenu();
             return;
         }
 
-        // Menu mode
         if (menuOpen)
         {
-            if (leftGripDown)
-                selectedIndex = (selectedIndex - 1 + spawnPrefabs.Length) % spawnPrefabs.Length;
-
-            if (rightGripDown)
-                selectedIndex = (selectedIndex + 1) % spawnPrefabs.Length;
-
-            if (rightTriggerDown)
-            {
-                menuOpen = false;
-                placementMode = true;
-
-                placementOffset = 0f;
-                currentYRotation = 0f;
-
-                if (previewObject != null)
-                    Destroy(previewObject);
-
-                previewObject = Instantiate(spawnPrefabs[selectedIndex]);
-
-                Rigidbody rb = previewObject.GetComponent<Rigidbody>();
-                if (rb != null)
-                {
-                    rb.useGravity = false;
-                    rb.isKinematic = true;
-                }
-            }
-
-            if (leftTriggerDown)
-                menuOpen = false;
+            HandleMenuMode(leftTriggerDown, rightTriggerDown, leftGripDown, rightGripDown);
         }
-
-        // Placement mode
         else if (placementMode)
         {
-            if (leftGripDown)
-                placementOffset -= placementStep;
-
-            if (rightGripDown)
-                placementOffset += placementStep;
-
-            if (rightTriggerDown)
-            {
-                placementMode = false;
-                orientationMode = true;
-            }
-
-            if (leftTriggerDown)
-            {
-                Destroy(previewObject);
-                placementMode = false;
-                menuOpen = true;
-            }
+            HandlePlacementMode(leftTriggerDown, rightTriggerDown);
         }
-
-        // Orientation mode
         else if (orientationMode)
         {
-            if (leftGripDown)
-                currentYRotation -= rotationStep;
-
-            if (rightGripDown)
-                currentYRotation += rotationStep;
-
-            if (rightTriggerDown)
-            {
-                Rigidbody rb = previewObject.GetComponent<Rigidbody>();
-                if (rb != null)
-                {
-                    rb.useGravity = true;
-                    rb.isKinematic = false;
-                }
-
-                previewObject = null;
-                orientationMode = false;
-            }
-
-            if (leftTriggerDown)
-            {
-                orientationMode = false;
-                placementMode = true;
-            }
+            HandleOrientationMode(leftTriggerDown, rightGripDown);
         }
+
+        UpdateVRMenu();
+    }
+
+    private void HandleMenuMode(bool leftTriggerDown, bool rightTriggerDown, bool leftGripDown, bool rightGripDown)
+    {
+        if (leftTriggerDown)
+        {
+            ExitSpawnMode();
+            return;
+        }
+
+        if (rightTriggerDown)
+            selectedIndex = (selectedIndex + 1) % spawnPrefabs.Length;
+
+        if (rightGripDown)
+            ToggleMultiSelect(spawnPrefabs[selectedIndex]);
+
+        if (leftGripDown)
+        {
+            if (multiSelectedPrefabs.Count > 0)
+                StartMultiPlacement();
+            else
+                StartSinglePlacement(spawnPrefabs[selectedIndex]);
+        }
+    }
+
+    private void HandlePlacementMode(bool leftTriggerDown, bool rightTriggerDown)
+    {
+        UpdatePreviewPosition();
+
+        if (leftTriggerDown)
+        {
+            CancelPreview();
+            menuOpen = true;
+            return;
+        }
+
+        if (rightTriggerDown)
+        {
+            placementMode = false;
+            orientationMode = true;
+            currentYRotation = GetControllerYaw();
+        }
+    }
+
+    private void HandleOrientationMode(bool leftTriggerDown, bool rightGripDown)
+    {
+        if (leftTriggerDown)
+        {
+            orientationMode = false;
+            placementMode = true;
+            return;
+        }
+
+        if (rightTriggerHeld)
+        {
+            currentYRotation = GetControllerYaw();
+
+            if (previewObject != null)
+                previewObject.transform.rotation = Quaternion.Euler(0f, currentYRotation, 0f);
+        }
+
+        if (rightGripDown)
+            ConfirmSpawn();
+    }
+
+    private void StartSinglePlacement(GameObject prefab)
+    {
+        selectedPrefab = prefab;
+
+        if (previewObject != null)
+            Destroy(previewObject);
+
+        previewObject = Instantiate(selectedPrefab);
+        PreparePreviewObject(previewObject);
+
+        menuOpen = false;
+        placementMode = true;
+    }
+
+    private void StartMultiPlacement()
+    {
+        if (previewObject != null)
+            Destroy(previewObject);
+
+        previewObject = new GameObject("Multi Spawn Preview");
+
+        for (int i = 0; i < multiSelectedPrefabs.Count; i++)
+        {
+            GameObject child = Instantiate(multiSelectedPrefabs[i], previewObject.transform);
+
+            float xOffset = (i - (multiSelectedPrefabs.Count - 1) / 2f) * multiSpawnSpacing;
+            child.transform.localPosition = new Vector3(xOffset, 0f, 0f);
+            child.transform.localRotation = Quaternion.identity;
+
+            PreparePreviewObject(child);
+        }
+
+        menuOpen = false;
+        placementMode = true;
+    }
+
+    private void UpdatePreviewPosition()
+    {
+        if (previewObject == null || rayOrigin == null)
+            return;
+
+        Ray ray = new Ray(rayOrigin.position, rayOrigin.forward);
+        Vector3 targetPoint;
+
+        if (Physics.Raycast(ray, out RaycastHit hit, maxRayDistance, placementMask))
+        {
+            targetPoint = hit.point;
+        }
+        else
+        {
+            targetPoint = rayOrigin.position + rayOrigin.forward * maxSpawnRange;
+        }
+
+        Vector3 fromPlayer = targetPoint - rayOrigin.position;
+
+        if (fromPlayer.magnitude > maxSpawnRange)
+        {
+            fromPlayer = fromPlayer.normalized * maxSpawnRange;
+            targetPoint = rayOrigin.position + fromPlayer;
+        }
+
+        previewObject.SetActive(true);
+        previewObject.transform.position = targetPoint + Vector3.up * spawnHeightOffset;
+        previewObject.transform.rotation = Quaternion.Euler(0f, currentYRotation, 0f);
+    }
+
+    private void ConfirmSpawn()
+    {
+        if (previewObject == null)
+            return;
+
+        Collider[] colliders = previewObject.GetComponentsInChildren<Collider>();
+        foreach (Collider col in colliders)
+            col.enabled = true;
+
+        Rigidbody[] bodies = previewObject.GetComponentsInChildren<Rigidbody>();
+        foreach (Rigidbody rb in bodies)
+        {
+            rb.useGravity = true;
+            rb.isKinematic = false;
+        }
+
+        ConfigureSpawnedObject(previewObject);
+
+        previewObject = null;
+        selectedPrefab = null;
+
+        multiSelectedPrefabs.Clear();
+
+        orientationMode = false;
+        placementMode = false;
+        menuOpen = false;
+    }
+
+    private void UpdateVRMenu()
+    {
+        if (vrMenuCanvas == null || vrMenuText == null)
+            return;
+
+        vrMenuCanvas.SetActive(true);
+
+        bool spawnModeActive = menuOpen || placementMode || orientationMode;
+        bool groupModeActive = groupSelectionMenu != null && groupSelectionMenu.IsGroupModeActive;
+        bool singleModeActive = singleSelectionMenu != null && singleSelectionMenu.IsSelectionModeActive;
+
+        if (!spawnModeActive && (groupModeActive || singleModeActive))
+            return;
+
+        if (headsetCamera != null)
+        {
+            vrMenuCanvas.transform.position =
+                headsetCamera.position +
+                headsetCamera.forward * menuDistance +
+                menuOffset;
+
+            vrMenuCanvas.transform.rotation =
+                Quaternion.LookRotation(vrMenuCanvas.transform.position - headsetCamera.position);
+        }
+
+        if (menuOpen)
+        {
+            vrMenuText.text =
+                "Spawn Menu\n\n" +
+                BuildMenuText() + "\n" +
+                "Left Trigger = Back\n" +
+                "Right Trigger = Change Prefab\n" +
+                "Right Grip = Add/Remove Multi-Select\n" +
+                "Left Grip = Start Placement";
+        }
+        else if (placementMode)
+        {
+            vrMenuText.text =
+                "Placement Mode\n\n" +
+                "Preview follows raycast hit point\n" +
+                "Right Trigger = Orientation\n" +
+                "Left Trigger = Back To Spawn Menu";
+        }
+        else if (orientationMode)
+        {
+            vrMenuText.text =
+                "Orientation Mode\n\n" +
+                "Hold Right Trigger = Rotate\n" +
+                "Right Grip = Confirm Spawn\n" +
+                "Left Trigger = Back To Placement";
+        }
+        else
+        {
+            vrMenuText.text =
+                "Controls\n\n" +
+                "Left Trigger = Spawn\n" +
+                "Left Grip = Group Selection\n" +
+                "Right Grip = Single Selection";
+        }
+    }
+
+    private void ExitSpawnMode()
+    {
+        CancelPreview();
+
+        menuOpen = false;
+        placementMode = false;
+        orientationMode = false;
+
+        multiSelectedPrefabs.Clear();
+        selectedPrefab = null;
+    }
+
+    private void ToggleMultiSelect(GameObject prefab)
+    {
+        if (multiSelectedPrefabs.Contains(prefab))
+            multiSelectedPrefabs.Remove(prefab);
+        else
+            multiSelectedPrefabs.Add(prefab);
+    }
+
+    private void ConfigureSpawnedObject(GameObject obj)
+    {
+        if (obj == null)
+            return;
+
+        if (obj.transform.childCount > 0 &&
+            obj.GetComponent<Renderer>() == null &&
+            obj.GetComponent<Collider>() == null)
+        {
+            for (int i = 0; i < obj.transform.childCount; i++)
+                RuntimeInteractableSetup.ConfigureInteractableHierarchy(obj.transform.GetChild(i).gameObject);
+
+            return;
+        }
+
+        RuntimeInteractableSetup.ConfigureInteractableHierarchy(obj);
+    }
+
+    private void PreparePreviewObject(GameObject obj)
+    {
+        Rigidbody[] bodies = obj.GetComponentsInChildren<Rigidbody>();
+        foreach (Rigidbody rb in bodies)
+        {
+            rb.useGravity = false;
+            rb.isKinematic = true;
+        }
+
+        Collider[] colliders = obj.GetComponentsInChildren<Collider>();
+        foreach (Collider col in colliders)
+            col.enabled = false;
+    }
+
+    private float GetControllerYaw()
+    {
+        if (rayOrigin == null)
+            return currentYRotation;
+
+        Vector3 flatForward = Vector3.ProjectOnPlane(rayOrigin.forward, Vector3.up);
+
+        if (flatForward.sqrMagnitude < 0.001f)
+            return currentYRotation;
+
+        return Quaternion.LookRotation(flatForward.normalized, Vector3.up).eulerAngles.y;
+    }
+
+    private void CancelPreview()
+    {
+        if (previewObject != null)
+            Destroy(previewObject);
+
+        previewObject = null;
+        selectedPrefab = null;
+
+        placementMode = false;
+        orientationMode = false;
+    }
+
+    private void ResetModes()
+    {
+        menuOpen = false;
+        placementMode = false;
+        orientationMode = false;
+
+        if (previewObject != null)
+            Destroy(previewObject);
+
+        previewObject = null;
+
+        if (vrMenuCanvas != null)
+            vrMenuCanvas.SetActive(false);
     }
 
     private void RefreshDevices()
@@ -187,8 +467,12 @@ public class SpawnMenu : MonoBehaviour
         rightDevice = InputDevices.GetDeviceAtXRNode(XRNode.RightHand);
     }
 
-    private void ReadButtons(out bool leftTriggerDown, out bool rightTriggerDown,
-                             out bool leftGripDown, out bool rightGripDown)
+    private void ReadButtons(
+        out bool leftTriggerDown,
+        out bool rightTriggerDown,
+        out bool leftGripDown,
+        out bool rightGripDown
+    )
     {
         bool leftTrigger = false;
         bool rightTrigger = false;
@@ -212,51 +496,31 @@ public class SpawnMenu : MonoBehaviour
         leftGripDown = leftGrip && !prevLeftGrip;
         rightGripDown = rightGrip && !prevRightGrip;
 
+        rightTriggerHeld = rightTrigger;
+
         prevLeftTrigger = leftTrigger;
         prevRightTrigger = rightTrigger;
         prevLeftGrip = leftGrip;
         prevRightGrip = rightGrip;
     }
 
-    void OnGUI()
+    private string BuildMenuText()
     {
-        if (!showMenuOnScreen || spawnPrefabs == null || spawnPrefabs.Length == 0)
-            return;
+        StringBuilder builder = new StringBuilder();
 
-        float scale = 3f;
-        Vector3 pivot = new Vector3(Screen.width / 2f, Screen.height / 2f, 0);
+        builder.AppendLine("All Spawnable Prefabs:");
 
-        GUI.matrix =
-            Matrix4x4.TRS(pivot, Quaternion.identity, Vector3.one) *
-            Matrix4x4.Scale(new Vector3(scale, scale, 1)) *
-            Matrix4x4.TRS(-pivot, Quaternion.identity, Vector3.one);
-
-        float w = 400;
-        float h = 180;
-        float x = (Screen.width - w) / 2f;
-        float y = (Screen.height - h) / 2f;
-
-        if (menuOpen)
+        for (int i = 0; i < spawnPrefabs.Length; i++)
         {
-            GUI.Box(new Rect(x, y, w, h),
-                "Spawn Menu\n\n" +
-                "Selected: " + spawnPrefabs[selectedIndex].name + "\n\n" +
-                "Left Grip = Previous | Right Grip = Next\n" +
-                "Right Trigger = Select\nLeft Trigger = Close");
+            bool isSelected = i == selectedIndex;
+            bool isMultiSelected = multiSelectedPrefabs.Contains(spawnPrefabs[i]);
+
+            string cursor = isSelected ? "> " : "  ";
+            string check = isMultiSelected ? "[X] " : "[ ] ";
+
+            builder.AppendLine(cursor + check + spawnPrefabs[i].name);
         }
-        else if (placementMode)
-        {
-            GUI.Box(new Rect(x, y, w, h),
-                "Placement Mode\n\n" +
-                "Left/Right Grip = Move\n" +
-                "Right Trigger = Orientation\nLeft Trigger = Cancel");
-        }
-        else if (orientationMode)
-        {
-            GUI.Box(new Rect(x, y, w, h),
-                "Orientation Mode\n\n" +
-                "Left/Right Grip = Rotate\n" +
-                "Right Trigger = Spawn\nLeft Trigger = Back");
-        }
+
+        return builder.ToString();
     }
 }
