@@ -493,12 +493,9 @@ public class GroupSelectionManipulationVR : MonoBehaviour
             return;
 
         Quaternion deltaRotation = Quaternion.AngleAxis(angle, Vector3.up);
-        Vector3 pivot = GetGroupPivot();
         for (int i = 0; i < selectedObjects.Count; i++)
         {
             Transform target = selectedObjects[i].transform;
-            Vector3 offset = target.position - pivot;
-            target.position = pivot + deltaRotation * offset;
             target.rotation = deltaRotation * target.rotation;
         }
 
