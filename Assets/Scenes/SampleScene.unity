@@ -1014,15 +1014,15 @@ PrefabInstance:
     - target: {fileID: 4313048543678107158, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
       propertyPath: vrMenuText
       value: 
-      objectReference: {fileID: 1009222934}
+      objectReference: {fileID: 0}
     - target: {fileID: 4313048543678107158, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
       propertyPath: vrMenuCanvas
       value: 
-      objectReference: {fileID: 527381669}
+      objectReference: {fileID: 0}
     - target: {fileID: 4313048543678107158, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
       propertyPath: headsetCamera
       value: 
-      objectReference: {fileID: 674854245}
+      objectReference: {fileID: 0}
     - target: {fileID: 5033801203051696737, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
       propertyPath: m_Enabled
       value: 0
@@ -3732,6 +3732,7 @@ MonoBehaviour:
     m_Bits: 4294967295
   selectorDistance: 0.65
   selectorRadius: 1.1
+  indicatorLineWidth: 0.01
   vrMenuCanvas: {fileID: 527381669}
   vrMenuText: {fileID: 1009222934}
   headsetCamera: {fileID: 674854245}
